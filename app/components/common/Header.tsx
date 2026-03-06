@@ -1,4 +1,4 @@
-// components/Header.tsx
+// components/common/Header.tsx
 "use client";
 
 import Link from "next/link";
@@ -13,200 +13,214 @@ import {
   Search,
   BookOpen,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/app/stores/hooks";
-import { toggleTheme } from "@/app/stores/features/theme/themeSlice";
+import { useState, useEffect, useContext } from "react"; // Import useContext
+import { GlobalContext } from "@/app/contexts/GlobalContext";
 
 export default function Header() {
-  const dispatch = useAppDispatch();
   const pathname = usePathname();
-  const theme = useAppSelector((state) => state.theme.mode);
-  const cartQuantity = useAppSelector((state) => state.cart.totalQuantity);
+  // Use useContext directly - no custom hook!
+  const { themeMode, setThemeMode } = useContext(GlobalContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Nav items
   const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Books", href: "/books" },
-    { name: "Categories", href: "/categories" },
-    { name: "New", href: "/new" },
-    { name: "Contact", href: "/contact" },
+    { name: "Home", href: "/", color: "#D51B26" },
+    { name: "Books", href: "/books", color: "#36A43D" },
+    { name: "Categories", href: "/categories", color: "#8859F8" },
+    { name: "New Arrivals", href: "/new", color: "#1C08A9" },
+    { name: "Contact", href: "/contact", color: "#D51B26" },
   ];
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    setThemeMode(themeMode === "light" ? "dark" : "light");
+  };
 
   const getThemeIcon = () => {
     if (!mounted) return <Sun size={18} />;
-    return theme === "light" 
-      ? <Moon size={18} className="text-stone-600 dark:text-stone-400" />
-      : <Sun size={18} className="text-stone-500" />;
-  };
-
-  // Get accent color based on path for active states
-  const getAccentColor = (href: string) => {
-    switch(href) {
-      case '/': return '#D51B26'; // Red for home
-      case '/books': return '#36A43D'; // Green for books
-      case '/categories': return '#8859F8'; // Purple for categories
-      case '/new': return '#1C08A9'; // Blue for new
-      default: return '#8859F8'; // Purple for others
-    }
+    return themeMode === "light" ? (
+      <Moon size={18} className="text-stone-600 dark:text-stone-400" />
+    ) : (
+      <Sun size={18} className="text-stone-500" />
+    );
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-all duration-700 ${
-      scrolled 
-        ? 'bg-cream-50/90 dark:bg-dark-surface/90 backdrop-blur-md shadow-sm' 
-        : 'bg-cream-50/80 dark:bg-dark-bg/80 backdrop-blur-sm'
-    }`}>
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo with brand colors */}
-          <Link href="/" className="flex items-center space-x-4 group">
-            <div className="relative w-12 h-12 overflow-hidden rounded-sm bg-gradient-to-br from-logo-red via-logo-purple to-logo-blue group-hover:scale-105 transition-transform duration-500">
-              <BookOpen className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-light tracking-wide text-stone-800 dark:text-stone-200">
-                Kiddo<span className="font-medium" style={{ color: '#D51B26' }}>Valley</span>
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500 dark:text-stone-500">
-                Children's <span style={{ color: '#36A43D' }}>Bookstore</span>
-              </span>
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              const accentColor = getAccentColor(item.href);
-              
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="relative group"
-                >
-                  <span className={`text-sm tracking-wide transition-all duration-300 ${
-                    isActive
-                      ? 'font-medium'
-                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
-                  }`}>
-                    {item.name}
+    <>
+      <header className="sticky top-0 z-50 transition-all duration-700 bg-cream-50 dark:bg-dark-surface border-b border-stone-200 dark:border-dark-border">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            {/* Logo */}
+            <Link
+              href="/"
+              className="flex items-center space-x-2 sm:space-x-3 group shrink-0"
+            >
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md bg-gradient-to-br from-logo-red via-logo-purple to-logo-blue group-hover:scale-105 transition-transform duration-300">
+                <BookOpen className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm sm:text-base md:text-lg font-light tracking-tight">
+                  <span className="text-stone-800 dark:text-stone-200">
+                    Kiddo
                   </span>
-                  {isActive && (
-                    <span 
-                      className="absolute -bottom-1 left-0 w-full h-0.5"
-                      style={{ backgroundColor: accentColor }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Icons */}
-          <div className="flex items-center space-x-2">
-            {/* Theme Toggle */}
-            <button
-              onClick={() => dispatch(toggleTheme())}
-              className="p-2 rounded-sm hover:bg-stone-200 dark:hover:bg-dark-elevated transition-all duration-300"
-            >
-              {getThemeIcon()}
-            </button>
-
-            {/* Search */}
-            <Link
-              href="/search"
-              className="p-2 rounded-sm hover:bg-stone-200 dark:hover:bg-dark-elevated transition-all duration-300"
-            >
-              <Search size={18} className="text-stone-600 dark:text-stone-400" />
-            </Link>
-
-            {/* User */}
-            <Link
-              href="/account"
-              className="p-2 rounded-sm hover:bg-stone-200 dark:hover:bg-dark-elevated transition-all duration-300"
-            >
-              <User size={18} className="text-stone-600 dark:text-stone-400" />
-            </Link>
-
-            {/* Cart */}
-            <Link
-              href="/cart"
-              className="relative p-2 rounded-sm hover:bg-stone-200 dark:hover:bg-dark-elevated transition-all duration-300"
-            >
-              <ShoppingCart size={18} className="text-stone-600 dark:text-stone-400" />
-              {cartQuantity > 0 && (
-                <span 
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-sm text-white text-[10px] flex items-center justify-center"
-                  style={{ backgroundColor: '#D51B26' }}
-                >
-                  {cartQuantity}
+                  <span className="font-semibold text-logo-red">Valley</span>
                 </span>
-              )}
+                <span className="text-[8px] sm:text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-500 hidden xs:block">
+                  Children's Bookstore
+                </span>
+              </div>
             </Link>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-sm hover:bg-stone-200 dark:hover:bg-dark-elevated transition-all duration-300"
-            >
-              {isMenuOpen ? 
-                <X size={18} className="text-stone-600 dark:text-stone-400" /> : 
-                <Menu size={18} className="text-stone-600 dark:text-stone-400" />
-              }
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-stone-200 dark:border-dark-border">
-            <nav className="flex flex-col space-y-3">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
-                const accentColor = getAccentColor(item.href);
-                
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="px-3 lg:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200"
+                    style={{
+                      backgroundColor: isActive
+                        ? `${item.color}15`
+                        : "transparent",
+                      color: isActive ? item.color : "",
+                    }}
+                  >
+                    <span
+                      className={
+                        !isActive ? "text-stone-600 dark:text-stone-400" : ""
+                      }
+                    >
+                      {item.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Right Icons */}
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              {/* Theme Toggle - using useContext directly */}
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                aria-label="Toggle theme"
+              >
+                {getThemeIcon()}
+              </button>
+
+              <Link
+                href="/search"
+                className="hidden xs:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                aria-label="Search"
+              >
+                <Search
+                  size={16}
+                  className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
+                />
+              </Link>
+
+              <Link
+                href="/account"
+                className="hidden sm:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                aria-label="Account"
+              >
+                <User
+                  size={16}
+                  className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
+                />
+              </Link>
+
+              <Link
+                href="/cart"
+                className="relative p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                aria-label="Cart"
+              >
+                <ShoppingCart
+                  size={16}
+                  className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
+                />
+                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-logo-red text-white text-[10px] sm:text-xs flex items-center justify-center">
+                  0
+                </span>
+              </Link>
+
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="md:hidden p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? (
+                  <X size={18} className="text-stone-600 dark:text-stone-400" />
+                ) : (
+                  <Menu
+                    size={18}
+                    className="text-stone-600 dark:text-stone-400"
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="sticky top-16 sm:top-20 z-40 bg-cream-50 dark:bg-dark-surface md:hidden border-b border-stone-200 dark:border-dark-border">
+          <nav className="container mx-auto px-4 py-4">
+            <div className="flex flex-col space-y-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className="relative group"
+                    className="px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                    style={{
+                      backgroundColor: isActive
+                        ? `${item.color}15`
+                        : "transparent",
+                      color: isActive ? item.color : "",
+                    }}
                   >
-                    <span className={`px-2 py-2 text-sm block ${
-                      isActive
-                        ? 'font-medium'
-                        : 'text-stone-600 dark:text-stone-400'
-                    }`}>
+                    <span
+                      className={
+                        !isActive ? "text-stone-600 dark:text-stone-400" : ""
+                      }
+                    >
                       {item.name}
                     </span>
-                    {isActive && (
-                      <span 
-                        className="absolute left-0 top-0 h-full w-0.5"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                    )}
                   </Link>
                 );
               })}
-            </nav>
-          </div>
-        )}
-      </div>
 
-      {/* Elegant bottom border with logo colors */}
-      <div className="h-[2px] w-full bg-gradient-to-r from-logo-red via-logo-purple to-logo-blue opacity-30"></div>
-    </header>
+              <Link
+                href="/search"
+                onClick={() => setIsMenuOpen(false)}
+                className="px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 flex items-center gap-3"
+              >
+                <Search size={18} />
+                <span>Search</span>
+              </Link>
+              <Link
+                href="/account"
+                onClick={() => setIsMenuOpen(false)}
+                className="px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 flex items-center gap-3"
+              >
+                <User size={18} />
+                <span>Account</span>
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }

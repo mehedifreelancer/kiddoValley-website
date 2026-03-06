@@ -2,10 +2,11 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import "./css/button.css";
 import Header from "./components/common/Header";
 import Footer from "./components/common/Footer";
-import { StoreProvider } from "./providers/StoreProvider";
-import { ThemeProvider } from "./providers/ThemeProvider";
+import { GlobalProvider } from "./contexts/GlobalContext";
+import Modal from "./components/shared/Modal";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -21,24 +22,64 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={geist.className}>
-        <StoreProvider>
-          <ThemeProvider>
-            <Header />
-            {/* Elegant gradient background with logo colors as subtle accents */}
-            <main className="min-h-screen bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated relative">
-              {/* Very subtle logo color accents in background */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-logo-red-soft dark:bg-logo-red/5 rounded-full blur-3xl opacity-20"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-logo-blue-soft dark:bg-logo-blue/5 rounded-full blur-3xl opacity-20"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-logo-purple-soft dark:bg-logo-purple/5 rounded-full blur-3xl opacity-10"></div>
+      <body className={`${geist.className} antialiased`}>
+        <GlobalProvider>
+          <Header />
+          <main className="relative min-h-screen overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated">
+              {/* Center splash */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className="w-[800px] h-[800px] rounded-full blur-3xl"
+                  style={{
+                    background: `radial-gradient(circle at center, 
+                      #D51B26 0%,
+                      #8859F8 20%,
+                      #1C08A9 40%,
+                      #36A43D 60%,
+                      #8859F8 70%,
+                      transparent 85%
+                    )`,
+                    opacity: 0.25,
+                  }}
+                />
+                <div
+                  className="absolute w-[400px] h-[400px] rounded-full blur-2xl"
+                  style={{
+                    background: `radial-gradient(circle at center, 
+                      #D51B26 0%,
+                      #8859F8 30%,
+                      #1C08A9 50%,
+                      transparent 80%
+                    )`,
+                    opacity: 0.2,
+                  }}
+                />
+                <div
+                  className="absolute w-[1100px] h-[1100px] rounded-full blur-[100px]"
+                  style={{
+                    background: `radial-gradient(circle at center, 
+                      #36A43D 0%,
+                      #1C08A9 20%,
+                      #8859F8 40%,
+                      #D51B26 60%,
+                      transparent 80%
+                    )`,
+                    opacity: 0.15,
+                  }}
+                />
               </div>
-              {/* Content */}
-              <div className="relative z-10">{children}</div>
-            </main>
-            <Footer />
-          </ThemeProvider>
-        </StoreProvider>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none"></div>
+            </div>
+            <div className="relative z-10  mx-auto  8 w-full">{children}</div>
+          </main>
+          <Footer />
+
+          {/* Modal is ALWAYS here - just invisible until opened */}
+          <Modal title="" size="md">
+            {/* Content will be set dynamically by parent components */}
+          </Modal>
+        </GlobalProvider>
       </body>
     </html>
   );

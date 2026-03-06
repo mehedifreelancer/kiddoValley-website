@@ -1,8 +1,10 @@
 /* app/globals.css */
 @import "tailwindcss";
+/* @import "./css/button.css"; */
 
 /* Dark mode with class */
 @custom-variant dark (&:where(.dark, .dark *));
+
 
 @theme {
   /* Your Logo Colors as Accents */
@@ -18,10 +20,10 @@
   --color-logo-green-soft: #e6f3e7;
   
   /* Creamy Light Mode Base */
-  --color-cream-50: #fefcf7;  /* Softest cream */
-  --color-cream-100: #fdf9f0;  /* Light cream */
-  --color-cream-200: #fcf3e6;  /* Warm cream */
-  --color-cream-300: #faecdb;  /* Deeper cream */
+  --color-cream-50: #fefcf7;
+  --color-cream-100: #fdf9f0;
+  --color-cream-200: #fcf3e6;
+  --color-cream-300: #faecdb;
   
   /* Elegant Neutrals */
   --color-stone-100: #f5f1ea;
@@ -35,10 +37,10 @@
   --color-stone-900: #2c2722;
   
   /* Gentle Dark Mode */
-  --color-dark-bg: #1a1b1f;     /* Deep charcoal with warmth */
-  --color-dark-surface: #25282e;  /* Rich dark */
-  --color-dark-elevated: #2f333a; /* Slightly lighter */
-  --color-dark-border: #3a3f47;   /* Subtle border */
+  --color-dark-bg: #1a1b1f;
+  --color-dark-surface: #25282e;
+  --color-dark-elevated: #2f333a;
+  --color-dark-border: #3a3f47;
 }
 
 /* Base styles */
@@ -64,4 +66,12 @@ body {
 /* Elegant border gradients */
 .border-logo-gradient {
   border-image: linear-gradient(to right, #D51B26, #8859F8, #1C08A9) 1;
+}
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.3; }
+}
+
+.splash-glow {
+  animation: gentlePulse 8s ease-in-out infinite;
 }
