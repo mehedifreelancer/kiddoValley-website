@@ -1,0 +1,45 @@
+/* app/globals.css */
+@import "tailwindcss";
+
+/* Dark mode with class */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Custom colors for KiddoValley */
+  --color-primary: #8b5cf6;      /* Vibrant purple */
+  --color-primary-light: #a78bfa; /* Light purple */
+  --color-primary-dark: #7c3aed;  /* Dark purple */
+  --color-secondary: #ec4899;     /* Pink */
+  --color-accent: #f59e0b;        /* Amber */
+  
+  /* Background colors */
+  --color-bg-light: #faf5ff;      /* Light purple tint */
+  --color-bg-dark: #0f172a;        /* Deep slate */
+  
+  /* Text colors */
+  --color-text-light: #1e293b;     /* Slate 800 */
+  --color-text-dark: #f1f5f9;      /* Slate 100 */
+}
+
+/* Base styles */
+body {
+  @apply bg-purple-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  @apply transition-colors duration-200;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

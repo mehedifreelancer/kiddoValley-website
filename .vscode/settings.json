@@ -1,0 +1,13 @@
+{
+  // Set Git Bash as default for Windows
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+
+  // Define Git Bash profile if not automatically detected
+  "terminal.integrated.profiles.windows": {
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "args": ["--login"],
+      "icon": "terminal-bash"
+    }
+  }
+}
