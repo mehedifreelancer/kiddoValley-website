@@ -5,41 +5,63 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Custom colors for KiddoValley */
-  --color-primary: #8b5cf6;      /* Vibrant purple */
-  --color-primary-light: #a78bfa; /* Light purple */
-  --color-primary-dark: #7c3aed;  /* Dark purple */
-  --color-secondary: #ec4899;     /* Pink */
-  --color-accent: #f59e0b;        /* Amber */
+  /* Your Logo Colors as Accents */
+  --color-logo-red: #D51B26;
+  --color-logo-blue: #1C08A9;
+  --color-logo-purple: #8859F8;
+  --color-logo-green: #36A43D;
   
-  /* Background colors */
-  --color-bg-light: #faf5ff;      /* Light purple tint */
-  --color-bg-dark: #0f172a;        /* Deep slate */
+  /* Soft versions for backgrounds */
+  --color-logo-red-soft: #fce8e9;
+  --color-logo-blue-soft: #e8e6ff;
+  --color-logo-purple-soft: #f3eeff;
+  --color-logo-green-soft: #e6f3e7;
   
-  /* Text colors */
-  --color-text-light: #1e293b;     /* Slate 800 */
-  --color-text-dark: #f1f5f9;      /* Slate 100 */
+  /* Creamy Light Mode Base */
+  --color-cream-50: #fefcf7;  /* Softest cream */
+  --color-cream-100: #fdf9f0;  /* Light cream */
+  --color-cream-200: #fcf3e6;  /* Warm cream */
+  --color-cream-300: #faecdb;  /* Deeper cream */
+  
+  /* Elegant Neutrals */
+  --color-stone-100: #f5f1ea;
+  --color-stone-200: #e8e2d9;
+  --color-stone-300: #dbd2c7;
+  --color-stone-400: #b9aea1;
+  --color-stone-500: #9b8f82;
+  --color-stone-600: #7f7366;
+  --color-stone-700: #62584e;
+  --color-stone-800: #463e37;
+  --color-stone-900: #2c2722;
+  
+  /* Gentle Dark Mode */
+  --color-dark-bg: #1a1b1f;     /* Deep charcoal with warmth */
+  --color-dark-surface: #25282e;  /* Rich dark */
+  --color-dark-elevated: #2f333a; /* Slightly lighter */
+  --color-dark-border: #3a3f47;   /* Subtle border */
 }
 
 /* Base styles */
 body {
-  @apply bg-purple-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300;
+  @apply bg-cream-100 dark:bg-dark-bg text-stone-800 dark:text-stone-300 transition-colors duration-700;
+  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
 }
 
-/* Smooth transitions for theme switching */
+/* Smooth transitions */
 * {
-  @apply transition-colors duration-200;
+  @apply transition-colors duration-300;
 }
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+/* Custom gradient backgrounds */
+.bg-logo-gradient {
+  @apply bg-gradient-to-r from-logo-red via-logo-purple to-logo-blue;
 }
 
-.animate-shimmer {
-  animation: shimmer 2s infinite;
+.bg-logo-gradient-soft {
+  @apply bg-gradient-to-r from-logo-red-soft via-logo-purple-soft to-logo-blue-soft;
+}
+
+/* Elegant border gradients */
+.border-logo-gradient {
+  border-image: linear-gradient(to right, #D51B26, #8859F8, #1C08A9) 1;
 }
