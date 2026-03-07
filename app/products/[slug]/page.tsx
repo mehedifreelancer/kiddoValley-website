@@ -15,7 +15,7 @@ export default function ProductPage({
   if (!product) notFound();
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container-md mx-auto py-10">
       <ProductDetails product={product} />
     </div>
   );

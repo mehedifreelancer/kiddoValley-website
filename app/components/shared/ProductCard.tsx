@@ -83,14 +83,13 @@ export default function ProductCard({
             )}
           </Link>
           {/* Like Button - New addition from the image */}
-
         </div>
 
         {/* Content */}
         <div className="p-2">
           <div className="flex justify-between items-start mb-3">
             <Link href={`/products/${product.id}`} className="block flex-1">
-              <h3  className="mb-1 text-xl font-bold text-stone-800 dark:text-stone-200 line-clamp-1 group-hover:text-[#E57373] transition-colors duration-300">
+              <h3 className="mb-1 text-xl font-bold text-stone-800 dark:text-stone-200 line-clamp-1 group-hover:text-[#E57373] transition-colors duration-300">
                 {product.name}
               </h3>
 
@@ -130,10 +129,7 @@ export default function ProductCard({
 
           {/* Stats Row - New addition from the image */}
 
-            <div className="flex items-center gap-4 my-3 text-xs text-stone-500 dark:text-stone-500 border-t border-stone-100 dark:border-dark-border ">
-
-            </div>
-
+          <div className="flex items-center gap-4 my-3 text-xs text-stone-500 dark:text-stone-500 border-t border-stone-100 dark:border-dark-border "></div>
 
           {/* Action Buttons - Conditionally shown based on showButtons */}
           {showButtons && (
@@ -143,7 +139,8 @@ export default function ProductCard({
                   productId={product.id}
                   productName={product.name}
                   price={product.price}
-                  onAddToCart={onAddToCart}
+                  imageUrl={product.imageUrl}
+                  author={product.author}
                 />
               </div>
 

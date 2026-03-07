@@ -7,6 +7,7 @@ import Header from "./components/common/Header";
 import Footer from "./components/common/Footer";
 import { GlobalProvider } from "./contexts/GlobalContext";
 import Modal from "./components/shared/Modal";
+import CartSidebar from "./components/common/CartSidebar";
 
 export const metadata: Metadata = {
   title: "KiddoValley - Books for Kids",
@@ -69,12 +70,13 @@ export default function RootLayout({
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none"></div>
             </div>
-            <div className="relative z-10  mx-auto  8 w-full">{children}</div>
+            <div className="relative  mx-auto w-full">{children}</div>
           </main>
           <Footer />
 
           {/* Modal is ALWAYS here - just invisible until opened */}
           <Modal title="" size="md" />
+           <CartSidebar />
         </GlobalProvider>
       </body>
     </html>

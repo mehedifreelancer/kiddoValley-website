@@ -1,52 +1,49 @@
 // components/products/AddToCartButton.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Plus, Minus, Check } from "lucide-react";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
+import { useGlobal } from "@/app/contexts/GlobalContext";
 
 interface AddToCartButtonProps {
   productId: string;
   productName: string;
   price: number;
-  onAddToCart?: (quantity: number) => void;
+  imageUrl?: string;
+  author?: string;
 }
 
 const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
   productName,
   price,
-  onAddToCart,
+  imageUrl,
+  author,
 }) => {
-  const [quantity, setQuantity] = useState(0);
-  const [isAdded, setIsAdded] = useState(false);
+  const { cart, addToCart, updateQuantity } = useGlobal();
+
+  // Find current item in cart
+  const cartItem = cart.find((item) => item.id === productId);
+  const quantity = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    if (quantity === 0) {
-      setQuantity(1);
-      setIsAdded(true);
-      onAddToCart?.(1);
-
-      setTimeout(() => {
-        setIsAdded(false);
-      }, 2000);
-    }
+    addToCart({
+      id: productId,
+      name: productName,
+      price: price,
+      imageUrl: imageUrl,
+      author: author,
+    });
   };
 
   const handleIncrement = () => {
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    onAddToCart?.(newQuantity);
+    updateQuantity(productId, (cartItem?.quantity || 0) + 1);
   };
 
   const handleDecrement = () => {
-    if (quantity > 1) {
-      const newQuantity = quantity - 1;
-      setQuantity(newQuantity);
-      onAddToCart?.(newQuantity);
-    } else {
-      setQuantity(0);
-      onAddToCart?.(0);
+    if (cartItem) {
+      updateQuantity(productId, cartItem.quantity - 1);
     }
   };
 
@@ -61,19 +58,11 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={handleAddToCart}
-            className="btn-primary btn-md btn-full"
+            className="btn-primary btn-md btn-full relative overflow-hidden group"
           >
-            {isAdded ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>কার্টে যোগ হয়েছে</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="w-4 h-4" />
-                <span>যোগ করুন</span>
-              </>
-            )}
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+            <ShoppingCart className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">যোগ করুন</span>
           </motion.button>
         ) : (
           <motion.div
@@ -82,16 +71,24 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="btn-quantity"
+            className="btn-quantity px-1"
           >
-            <button onClick={handleDecrement} className="btn-quantity-button">
-              <Minus className="w-4 h-4" />
+            <button
+              onClick={handleDecrement}
+              className="btn-quantity-button hover:bg-white/30 transition-colors relative overflow-hidden group"
+            >
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+              <Minus className="w-4 h-4 relative z-10" />
             </button>
 
             <span className="btn-quantity-text">{quantity}</span>
 
-            <button onClick={handleIncrement} className="btn-quantity-button">
-              <Plus className="w-4 h-4" />
+            <button
+              onClick={handleIncrement}
+              className="btn-quantity-button hover:bg-white/30 transition-colors relative overflow-hidden group"
+            >
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+              <Plus className="w-4 h-4 relative z-10" />
             </button>
           </motion.div>
         )}

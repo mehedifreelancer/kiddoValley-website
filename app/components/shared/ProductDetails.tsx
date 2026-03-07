@@ -187,7 +187,6 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           <RelatedProducts
             products={relatedProducts}
             title="আপনি আরও পছন্দ করতে পারেন"
-            maxColumns={4}
           />
         )}
       </div>

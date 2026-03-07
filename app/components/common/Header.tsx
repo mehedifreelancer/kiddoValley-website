@@ -13,13 +13,12 @@ import {
   Search,
   BookOpen,
 } from "lucide-react";
-import { useState, useEffect, useContext } from "react"; // Import useContext
-import { GlobalContext } from "@/app/contexts/GlobalContext";
+import { useState, useEffect } from "react";
+import { useGlobal } from "@/app/contexts/GlobalContext";
 
 export default function Header() {
   const pathname = usePathname();
-  // Use useContext directly - no custom hook!
-  const { themeMode, setThemeMode } = useContext(GlobalContext);
+  const { themeMode, setThemeMode, cartCount, openCart } = useGlobal(); // Get cart functions
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -106,7 +105,7 @@ export default function Header() {
 
             {/* Right Icons */}
             <div className="flex items-center space-x-1 sm:space-x-2">
-              {/* Theme Toggle - using useContext directly */}
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
@@ -137,8 +136,9 @@ export default function Header() {
                 />
               </Link>
 
-              <Link
-                href="/cart"
+              {/* Cart Button - Updated with cartCount and openCart */}
+              <button
+                onClick={openCart}
                 className="relative p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Cart"
               >
@@ -146,10 +146,12 @@ export default function Header() {
                   size={16}
                   className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
                 />
-                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-logo-red text-white text-[10px] sm:text-xs flex items-center justify-center">
-                  0
-                </span>
-              </Link>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-logo-red text-white text-[10px] sm:text-xs flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
