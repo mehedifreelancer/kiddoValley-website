@@ -8,6 +8,7 @@
   @apply rounded-lg font-bold transition-all duration-150 relative overflow-hidden border-t-2 border-white/40 flex items-center justify-center gap-1.5;
 }
 
+/* Remove the old hover effects that cause jumping */
 .btn-base::before,
 .btn-primary::before,
 .btn-secondary::before {
@@ -22,17 +23,67 @@
   @apply absolute inset-0 bg-gradient-to-t from-white/10 to-transparent rounded-b-lg pointer-events-none;
 }
 
-/* Primary button - Purple */
+/* Primary button - Purple - NO JUMPING! */
 .btn-primary {
-  @apply bg-[#BA68C8] text-white shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_3px_0_#8E4C9E,0_5px_5px_rgba(0,0,0,0.3)] hover:translate-y-1 active:translate-y-2 active:shadow-[0_1px_0_#8E4C9E,0_2px_2px_rgba(0,0,0,0.2)];
+  @apply bg-[#BA68C8] text-white shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] relative;
 }
 
-/* Secondary button - Blue */
+/* Shimmer effect on hover */
+.btn-primary::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent;
+  transform: translateX(-100%);
+  transition: transform 0.7s ease-in-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.btn-primary:hover::before {
+  transform: translateX(100%);
+}
+
+/* Remove any translateY animations */
+.btn-primary:hover {
+  @apply shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)]; /* Keep same shadow */
+  transform: none; /* No movement */
+}
+
+.btn-primary:active {
+  @apply shadow-[0_3px_0_#8E4C9E,0_5px_5px_rgba(0,0,0,0.3)];
+  transform: translateY(2px); /* Only press on click */
+}
+
+/* Secondary button - Blue - NO JUMPING! */
 .btn-secondary {
-  @apply bg-[#7986CB] text-white shadow-[0_6px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_3px_0_#5C6BC0,0_5px_5px_rgba(0,0,0,0.3)] hover:translate-y-1 active:translate-y-2 active:shadow-[0_1px_0_#5C6BC0,0_2px_2px_rgba(0,0,0,0.2)];
+  @apply bg-[#7986CB] text-white shadow-[0_6px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)] relative;
 }
 
-/* Size variants - REDUCED PADDING */
+/* Shimmer effect on hover */
+.btn-secondary::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent;
+  transform: translateX(-100%);
+  transition: transform 0.7s ease-in-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.btn-secondary:hover::before {
+  transform: translateX(100%);
+}
+
+/* Remove any translateY animations */
+.btn-secondary:hover {
+  @apply shadow-[0_6px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)]; /* Keep same shadow */
+  transform: none; /* No movement */
+}
+
+.btn-secondary:active {
+  @apply shadow-[0_3px_0_#5C6BC0,0_5px_5px_rgba(0,0,0,0.3)];
+  transform: translateY(2px); /* Only press on click */
+}
+
+/* Size variants */
 .btn-sm {
   @apply py-1 px-2 text-xs min-h-[24px];
 }
@@ -52,31 +103,45 @@
 
 /* ===== QUANTITY BUTTON STYLES ===== */
 
-/* Quantity container - EXTRA SLIM */
+/* Quantity container */
 .btn-quantity {
   @apply flex items-center justify-between bg-[#BA68C8] rounded-lg shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] relative overflow-hidden border-t-2 border-white/40;
   min-height: 32px;
   height: 32px;
-  padding: 2px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
+/* Base gradient background */
 .btn-quantity::before {
   content: '';
   @apply absolute inset-0 bg-gradient-to-b from-white/60 via-white/20 to-transparent rounded-t-lg pointer-events-none;
 }
 
-/* Quantity buttons (+ and -) - SLIM */
+/* Shimmer effect for quantity buttons on hover */
 .btn-quantity-button {
-  @apply rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors relative z-10;
+  @apply rounded-lg bg-white/20 text-white flex items-center justify-center transition-colors relative z-10 overflow-hidden;
   width: 28px;
   height: 28px;
 }
 
-.btn-quantity-button svg {
-  @apply w-3.5 h-3.5;
+.btn-quantity-button::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent;
+  transform: translateX(-100%);
+  transition: transform 0.5s ease-in-out;
+  pointer-events: none;
 }
 
-/* Quantity text - SLIM */
+.btn-quantity-button:hover::before {
+  transform: translateX(100%);
+}
+
+.btn-quantity-button svg {
+  @apply w-3.5 h-3.5 relative z-10;
+}
+
+/* Quantity text */
 .btn-quantity-text {
   @apply text-white font-semibold text-xs min-w-[24px] text-center relative z-10;
 }
