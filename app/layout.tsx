@@ -8,8 +8,6 @@ import Footer from "./components/common/Footer";
 import { GlobalProvider } from "./contexts/GlobalContext";
 import Modal from "./components/shared/Modal";
 
-const geist = Geist({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: "KiddoValley - Books for Kids",
   description: "Magical books for young readers",
@@ -21,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.className} antialiased`}>
+    <html suppressHydrationWarning>
+      <body>
         <GlobalProvider>
           <Header />
           <main className="relative min-h-screen overflow-hidden">
@@ -76,9 +74,7 @@ export default function RootLayout({
           <Footer />
 
           {/* Modal is ALWAYS here - just invisible until opened */}
-          <Modal title="" size="md">
-            {/* Content will be set dynamically by parent components */}
-          </Modal>
+          <Modal title="" size="md" />
         </GlobalProvider>
       </body>
     </html>

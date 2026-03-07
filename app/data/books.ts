@@ -21,7 +21,7 @@ export const books: Book[] = [
     category: "ফ্যান্টাসি",
     ageRange: "৩-৫ বছর",
     rating: 4.9,
-    videoUrl: "https://youtube.com/watch?v=123",
+    videoUrl: "https://youtu.be/mtARycRMNwA?si=H_WDAwa2hqRAmIr7",
   },
   {
     id: "2",

@@ -52,8 +52,8 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 transition-all duration-700 bg-cream-50 dark:bg-dark-surface border-b border-stone-200 dark:border-dark-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 transition-all duration-700 bg-cream-100 dark:bg-dark-surface border-b border-stone-200 dark:border-dark-border">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Logo */}
             <Link

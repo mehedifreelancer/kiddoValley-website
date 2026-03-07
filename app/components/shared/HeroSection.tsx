@@ -94,7 +94,7 @@ export default function HeroSection() {
   ];
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated">
+    <section className="pb-15 relative w-full overflow-hidden bg-gradient-to-br from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated">
       {/* Background decorative elements - full width */}
       <div className="absolute inset-0 w-full pointer-events-none">
         <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-logo-red/5 dark:bg-logo-red/10 blur-3xl"></div>
@@ -122,7 +122,7 @@ export default function HeroSection() {
           <SwiperSlide key={slide.id}>
             <div className="relative w-full h-full">
               {/* Content container - this keeps content centered and constrained */}
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
+              <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 h-full">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center h-full py-6 md:py-8">
                   {/* Left Content */}
                   <motion.div
@@ -146,7 +146,7 @@ export default function HeroSection() {
                     </div>
 
                     {/* Main Heading */}
-                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-light tracking-tight mb-2 md:mb-3">
+                    <h1 className=" text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2 md:mb-3">
                       <span className="block text-stone-800 dark:text-stone-200">
                         {slide.title}
                       </span>

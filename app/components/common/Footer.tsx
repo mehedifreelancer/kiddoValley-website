@@ -4,7 +4,7 @@ import { BookOpen, Heart } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="relative  dark:bg-dark-surface border-t border-stone-300 dark:border-dark-border overflow-hidden">
+    <footer className="bg-cream-100 relative  dark:bg-dark-surface border-t border-stone-300 dark:border-dark-border overflow-hidden">
       {/* Minimal splash effect at bottom right */}
       <div className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none">
         <div
@@ -47,7 +47,7 @@ export default function Footer() {
       </div>
 
       {/* Footer Content */}
-      <div className="container mx-auto px-6 py-12 relative z-10">
+      <div className="container-md mx-auto px-6 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">

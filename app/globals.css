@@ -1,11 +1,64 @@
 /* app/globals.css */
 @import "tailwindcss";
 /* @import "./css/button.css"; */
+/* app/globals.css */
 
 /* Dark mode with class */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* app/globals.css */
+@import "tailwindcss";
 
+/* Light weight (300) */
+@font-face {
+  font-family: 'Li Alinur Showpnocari';
+  src: url('/fonts/LiAlinurShowpnocariLight.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Normal/Regular weight (400) */
+@font-face {
+  font-family: 'Li Alinur Showpnocari';
+  src: url('/fonts/LiAlinurShowpnocariNormal.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Medium weight (500) */
+@font-face {
+  font-family: 'Li Alinur Showpnocari';
+  src: url('/fonts/LiAlinurShowpnocariMedium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Semi-bold weight (600) */
+@font-face {
+  font-family: 'Li Alinur Showpnocari';
+  src: url('/fonts/LiAlinurShowpnocariSemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Optional: Bold (700) - if you have it */
+@font-face {
+  font-family: 'Li Alinur Showpnocari';
+  src: url('/fonts/LiAlinurShowpnocariBold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base styles */
+body {
+  @apply bg-cream-100 dark:bg-dark-bg text-stone-800 dark:text-stone-300 transition-colors duration-700;
+  font-family: 'Li Alinur Showpnocari', 'Noto Sans Bengali', 'Tiro Bangla', system-ui, sans-serif;
+}
 @theme {
   /* Your Logo Colors as Accents */
   --color-logo-red: #D51B26;
@@ -43,11 +96,7 @@
   --color-dark-border: #3a3f47;
 }
 
-/* Base styles */
-body {
-  @apply bg-cream-100 dark:bg-dark-bg text-stone-800 dark:text-stone-300 transition-colors duration-700;
-  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
-}
+
 
 /* Smooth transitions */
 * {
@@ -74,4 +123,46 @@ body {
 
 .splash-glow {
   animation: gentlePulse 8s ease-in-out infinite;
+}
+
+
+
+/* Custom narrow containers */
+.container-xs {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.container-sm {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.container-md {
+  max-width: 1250px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Responsive padding */
+@media (width >= 640px) {
+  .container-xs, .container-sm, .container-md {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (width >= 1024px) {
+  .container-xs, .container-sm, .container-md {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }

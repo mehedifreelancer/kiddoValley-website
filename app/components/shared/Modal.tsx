@@ -17,7 +17,7 @@ export default function Modal({
   isOpen,
   onClose,
   title = "",
-  size = "md",
+  size = "xl",
   children,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -89,11 +89,11 @@ export default function Modal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className={`bg-white dark:bg-dark-surface rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden border border-stone-200 dark:border-dark-border`}
+              className={`bg-white dark:bg-dark-surface rounded-md shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden border border-stone-200 dark:border-dark-border`}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-dark-border">
-                <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-200">
+              <div className="flex items-center justify-between p-2 border-b border-stone-200 dark:border-dark-border">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-stone-200">
                   {title}
                 </h3>
                 <button
@@ -105,7 +105,7 @@ export default function Modal({
               </div>
 
               {/* Modal Content */}
-              <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="p-0 overflow-y-auto max-h-[calc(90vh-80px)]">
                 {children}
               </div>
             </motion.div>

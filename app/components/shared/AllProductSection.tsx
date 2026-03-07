@@ -15,7 +15,7 @@ export default function AllProductSection() {
 
   return (
     <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
