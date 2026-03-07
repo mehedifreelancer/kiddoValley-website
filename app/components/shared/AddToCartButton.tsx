@@ -71,13 +71,13 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="btn-quantity px-1"
+            className="btn-primary py-1"
           >
             <button
               onClick={handleDecrement}
               className="btn-quantity-button hover:bg-white/30 transition-colors relative overflow-hidden group"
             >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+              <span className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
               <Minus className="w-4 h-4 relative z-10" />
             </button>
 

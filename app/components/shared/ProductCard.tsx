@@ -5,12 +5,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Play, BookOpen, Heart } from "lucide-react"; // Added Heart import
+import { Play, BookOpen, Heart, ShoppingCart } from "lucide-react"; // Added Heart import
 import { Book } from "@/app/data/books";
 import AddToCartButton from "./AddToCartButton";
 import Button from "./Button";
 import Modal from "./Modal";
 import VideoModalContent from "./VideoModalContent";
+import { useGlobal } from "@/app/contexts/GlobalContext";
 
 interface ProductCardProps {
   product: Book;
@@ -26,14 +27,31 @@ export default function ProductCard({
   showButtons = true, // Default to true for backward compatibility
 }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState(false); // Added like state
-
+  const { cart, addToCart, openCart } = useGlobal();
+  const cartItem = cart.find((item) => item.id === product.id);
+  const currentQuantity = cartItem?.quantity || 0;
   const handleViewVideo = () => {
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const handleOrderNow = () => {
+    if (currentQuantity === 0) {
+      // If not in cart, add with quantity 1
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        author: product.author,
+        quantity: 1,
+      });
+    }
+    // Open cart sidebar
+    openCart();
   };
 
   return (
@@ -134,15 +152,15 @@ export default function ProductCard({
           {/* Action Buttons - Conditionally shown based on showButtons */}
           {showButtons && (
             <div className="flex gap-2 pb-2">
-              <div className={product.videoUrl ? "flex-1" : "w-full"}>
-                <AddToCartButton
-                  productId={product.id}
-                  productName={product.name}
-                  price={product.price}
-                  imageUrl={product.imageUrl}
-                  author={product.author}
-                />
-              </div>
+              <Button
+                variant="primary"
+                size="md"
+                icon={<ShoppingCart size={16} />}
+                onClick={handleOrderNow}
+                className=" w-full"
+              >
+                অর্ডার করুন
+              </Button>
 
               {product.videoUrl && (
                 <Button
@@ -150,7 +168,7 @@ export default function ProductCard({
                   size="md"
                   icon={<Play size={16} />}
                   onClick={handleViewVideo}
-                  className="flex-1"
+                  className="w-full"
                 >
                   ভিডিও
                 </Button>
