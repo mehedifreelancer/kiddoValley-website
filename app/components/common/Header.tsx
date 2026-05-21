@@ -14,17 +14,31 @@ import {
   BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGlobal } from "@/app/contexts/GlobalContext";
 
 export default function Header() {
   const pathname = usePathname();
-  const { themeMode, setThemeMode, cartCount, openCart } = useGlobal(); // Get cart functions
+  const { themeMode, setThemeMode, cartCount, openCart, isCartOpen } =
+    useGlobal();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close menu when cart opens
+  useEffect(() => {
+    if (isCartOpen && isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }, [isCartOpen]);
+
+  // Close menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   // Nav items
   const navItems = [
@@ -47,6 +61,10 @@ export default function Header() {
     ) : (
       <Sun size={18} className="text-stone-500" />
     );
+  };
+
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
@@ -105,7 +123,7 @@ export default function Header() {
 
             {/* Right Icons */}
             <div className="flex items-center space-x-1 sm:space-x-2">
-              {/* Theme Toggle */}
+              {/* Theme Toggle - FIXED! */}
               <button
                 onClick={toggleTheme}
                 className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
@@ -136,7 +154,7 @@ export default function Header() {
                 />
               </Link>
 
-              {/* Cart Button - Updated with cartCount and openCart */}
+              {/* Cart Button */}
               <button
                 onClick={openCart}
                 className="relative p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
@@ -153,8 +171,9 @@ export default function Header() {
                 )}
               </button>
 
+              {/* Mobile Menu Button */}
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={handleMenuToggle}
                 className="md:hidden p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Toggle menu"
               >
@@ -172,57 +191,99 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="sticky top-16 sm:top-20 z-40 bg-cream-50 dark:bg-dark-surface md:hidden border-b border-stone-200 dark:border-dark-border">
-          <nav className="container mx-auto px-4 py-4">
-            <div className="flex flex-col space-y-2">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
-                    style={{
-                      backgroundColor: isActive
-                        ? `${item.color}15`
-                        : "transparent",
-                      color: isActive ? item.color : "",
-                    }}
-                  >
-                    <span
-                      className={
-                        !isActive ? "text-stone-600 dark:text-stone-400" : ""
-                      }
-                    >
-                      {item.name}
-                    </span>
-                  </Link>
-                );
-              })}
+      {/* Mobile Menu Sidebar - Left Side */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            />
 
-              <Link
-                href="/search"
-                onClick={() => setIsMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 flex items-center gap-3"
-              >
-                <Search size={18} />
-                <span>Search</span>
-              </Link>
-              <Link
-                href="/account"
-                onClick={() => setIsMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 flex items-center gap-3"
-              >
-                <User size={18} />
-                <span>Account</span>
-              </Link>
-            </div>
-          </nav>
-        </div>
-      )}
+            {/* Sidebar - Left Side */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed left-0 top-0 bottom-0 w-4/5 max-w-sm bg-cream-50 dark:bg-dark-surface shadow-2xl z-50 md:hidden flex flex-col"
+            >
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-dark-border">
+                <div className="flex items-center gap-2">
+                  <BookOpen size={20} className="text-[#BA68C8]" />
+                  <h2 className="text-lg font-semibold text-stone-800 dark:text-stone-200">
+                    মেনু
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+                >
+                  <X size={20} className="text-stone-600 dark:text-stone-400" />
+                </button>
+              </div>
+
+              {/* Navigation Items */}
+              <nav className="flex-1 overflow-y-auto p-4">
+                <div className="flex flex-col space-y-2">
+                  {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="px-4 py-3 rounded-lg text-base font-medium transition-all duration-200"
+                        style={{
+                          backgroundColor: isActive
+                            ? `${item.color}15`
+                            : "transparent",
+                          color: isActive ? item.color : "",
+                        }}
+                      >
+                        <span
+                          className={
+                            !isActive
+                              ? "text-stone-600 dark:text-stone-400"
+                              : ""
+                          }
+                        >
+                          {item.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </nav>
+
+              {/* Sidebar Footer with Additional Links */}
+              <div className="p-4 border-t border-stone-200 dark:border-dark-border">
+                <Link
+                  href="/search"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                >
+                  <Search size={18} />
+                  <span>Search</span>
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                >
+                  <User size={18} />
+                  <span>Account</span>
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

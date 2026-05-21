@@ -51,7 +51,7 @@ export default function RootLayout({
                       #1C08A9 50%,
                       transparent 80%
                     )`,
-                    opacity: 0.2,
+                    opacity: 0.,
                   }}
                 />
                 <div

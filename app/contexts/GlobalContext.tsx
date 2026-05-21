@@ -39,6 +39,12 @@ interface GlobalContextType {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
+
+  // Mobile Menu Sidebar
+  isMenuOpen: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+  toggleMenu: () => void;
 }
 
 // Create context
@@ -63,6 +69,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -157,16 +164,40 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Cart sidebar functions
-  const openCart = () => setIsCartOpen(true);
+  // Cart sidebar functions - with menu awareness
+  const openCart = () => {
+    if (isMenuOpen) setIsMenuOpen(false);
+    setIsCartOpen(true);
+  };
+
   const closeCart = () => setIsCartOpen(false);
-  const toggleCart = () => setIsCartOpen((prev) => !prev);
+
+  const toggleCart = () => {
+    if (!isCartOpen && isMenuOpen) setIsMenuOpen(false);
+    setIsCartOpen((prev) => !prev);
+  };
+
+  // Mobile menu functions - with cart awareness
+  const openMenu = () => {
+    if (isCartOpen) setIsCartOpen(false);
+    setIsMenuOpen(true);
+  };
+
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const toggleMenu = () => {
+    if (!isMenuOpen && isCartOpen) setIsCartOpen(false);
+    setIsMenuOpen((prev) => !prev);
+  };
 
   return (
     <GlobalContext.Provider
       value={{
+        // Theme
         themeMode,
         setThemeMode,
+
+        // Cart
         cart,
         addToCart,
         removeFromCart,
@@ -174,10 +205,18 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         clearCart,
         cartTotal,
         cartCount,
+
+        // Cart Sidebar
         isCartOpen,
         openCart,
         closeCart,
         toggleCart,
+
+        // Mobile Menu Sidebar - NOW INCLUDED!
+        isMenuOpen,
+        openMenu,
+        closeMenu,
+        toggleMenu,
       }}
     >
       {children}

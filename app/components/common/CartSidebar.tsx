@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useGlobal } from "@/app/contexts/GlobalContext";
 import Button from "../shared/Button";
+import CartItem from "../shared/CartItem";
 
 export default function CartSidebar() {
-  // Use single useGlobal hook to get everything
   const {
     cart,
     removeFromCart,
@@ -82,100 +82,27 @@ export default function CartSidebar() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {cart.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex gap-3 p-2 rounded-lg hover:bg-stone-50 dark:hover:bg-dark-elevated transition-colors"
-                    >
-                      {/* Product Image */}
-                      <Link
-                        href={`/products/${item.id}`}
-                        onClick={closeCart}
-                        className="relative w-20 h-20 rounded-md overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10 flex-shrink-0"
+                  <AnimatePresence mode="popLayout">
+                    {cart.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        {item.imageUrl ? (
-                          <Image
-                            src={item.imageUrl}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <ShoppingBag size={24} className="text-stone-400" />
-                          </div>
-                        )}
-                      </Link>
-
-                      {/* Product Info */}
-                      <div className="flex flex-col justify-between w-full ">
-                        <div className="flex justify-between">
-
-                        <Link
-                          href={`/products/${item.id}`}
-                          onClick={closeCart}
-                          className="block"
-                        >
-                          <h3 className="font-medium text-stone-800 dark:text-stone-200 line-clamp-1 hover:text-[#E57373] transition-colors">
-                            {item.name}
-                          </h3>
-
-                        </Link>
-                        <button
-                        onClick={() => removeFromCart(item.id)}
-                        className=" p-1 hover:bg-stone-200 dark:hover:bg-dark-elevated rounded-full transition-colors self-start"
-                      >
-                        <Trash2
-                          size={16}
-                          className="text-red-400 dark:text-stone-400 "
+                        <CartItem
+                          item={item}
+                          onUpdateQuantity={updateQuantity}
+                          onRemove={removeFromCart}
+                          onItemClick={closeCart}
+                          variant="sidebar"
+                          showRemove={true}
                         />
-                      </button>
-                        </div>
-
-                        {/* Price and Quantity */}
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="font-bold text-[#E57373]">
-                            ৳{(item.price * item.quantity).toFixed(2)}
-                          </span>
-
-                          <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-md">
-                            <button
-                              onClick={() =>
-                                updateQuantity(item.id, item.quantity - 1)
-                              }
-                              className="p-1 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors rounded-l-md"
-                            >
-                              <Minus
-                                size={14}
-                                className="text-stone-600 dark:text-stone-400"
-                              />
-                            </button>
-                            <span className="w-8 text-center text-sm font-medium text-stone-700 dark:text-stone-300">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() =>
-                                updateQuantity(item.id, item.quantity + 1)
-                              }
-                              className="p-1 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors rounded-r-md"
-                            >
-                              <Plus
-                                size={14}
-                                className="text-stone-600 dark:text-stone-400"
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Remove Button */}
-                      
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
@@ -198,14 +125,16 @@ export default function CartSidebar() {
                       অর্ডার কনফার্ম করুন
                     </Button>
                   </Link>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    fullWidth
-                    onClick={closeCart}
-                  >
-                    শপিং চালিয়ে যান
-                  </Button>
+                  <Link href={"/checkout"}>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      fullWidth
+                      onClick={closeCart}
+                    >
+                      শপিং চালিয়ে যান
+                    </Button>
+                  </Link>
                 </div>
               </div>
             )}

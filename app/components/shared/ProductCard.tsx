@@ -60,7 +60,7 @@ export default function ProductCard({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="group bg-white dark:bg-dark-surface rounded-md shadow-sm overflow-hidden border border-stone-100 dark:border-dark-border transition-all duration-300"
+        className="group bg-white/10 dark:bg-dark-surface/10 backdrop-blur-md rounded-md shadow-md overflow-hidden border border-white/40 dark:border-dark-border/80 transition-all duration-300"
       >
         {/* Image Container */}
         <div className="relative">
