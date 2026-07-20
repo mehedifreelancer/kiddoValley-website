@@ -4,19 +4,99 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
-import { books } from "@/app/data/books";
+import { useEffect, useRef } from "react";
+import { getPublicProducts, Product } from "@/app/products/product.service";
 
+// Map API product to Book type expected by ProductCard
+const mapProductToBook = (product: Product): any => ({
+  id: String(product.id),
+  name: product.name,
+  price: product.price,
+  discount: product.discount,
+  imageUrl: product.thumbnailImage?.[0]?.imgUrl || "/placeholder.jpg",
+  category: product.category?.name || "Uncategorized",
+  author: product.sku || "Unknown Author",
+  rating: 4.5, // you can compute this from reviews
+  videoUrl: product.videoUrl || null,
+  inStock: product.inStock || "out of stock",
+  variants: product.variants || {},
+});
 export default function AllProductSection() {
-  const handleAddToCart = (id: string, quantity: number) => {
-    console.log(`Added ${quantity} of product ${id} to cart`);
-    // Your cart logic here
-  };
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteQuery({
+    queryKey: ["public-products"],
+    queryFn: ({ pageParam = 1 }) => getPublicProducts(pageParam, 12),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.pages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const products = data?.pages.flatMap((page) => page.data) || [];
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center min-h-[300px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-red-500">Failed to load products.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section className="">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-gray-500">No products found.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
-      <div className="container-md  mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+    <section className="">
+      <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -33,33 +113,23 @@ export default function AllProductSection() {
           </p>
         </motion.div>
 
-        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {books.map((book) => (
+          {products.map((product) => (
             <ProductCard
-              key={book.id}
-              product={book}
-              onAddToCart={(quantity) => handleAddToCart(book.id, quantity)}
-              // No onViewVideo prop needed anymore!
+              key={product.id}
+              product={mapProductToBook(product)}
+              onAddToCart={() => {}}
             />
           ))}
         </div>
 
-        {/* View All Button */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-12"
-        >
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-[#BA68C8] text-white rounded-lg font-bold shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_3px_0_#8E4C9E,0_5px_5px_rgba(0,0,0,0.3)] hover:translate-y-1 active:translate-y-2 active:shadow-[0_1px_0_#8E4C9E,0_2px_2px_rgba(0,0,0,0.2)] transition-all duration-150 relative overflow-hidden border-t-2 border-white/40 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/60 before:via-white/20 before:to-transparent before:rounded-t-lg before:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-t after:from-white/10 after:to-transparent after:rounded-b-lg after:pointer-events-none"
-          >
-            সব পণ্য দেখুন
-            <ArrowRight size={18} />
-          </Link>
-        </motion.div>
+        {hasNextPage && (
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            {isFetchingNextPage && (
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

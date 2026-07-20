@@ -85,7 +85,7 @@
 
 /* Size variants */
 .btn-sm {
-  @apply py-1 px-2 text-xs min-h-[24px];
+  @apply py-1 px-2 text-sm min-h-[24px];
 }
 
 .btn-md {
