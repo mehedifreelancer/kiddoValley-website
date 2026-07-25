@@ -9,8 +9,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
-  size?: string; // এখন যেকোনো Tailwind ক্লাস স্ট্রিং দেয়া যাবে, যেমন "max-w-4xl lg:max-w-full"
-  className?: string; // অতিরিক্ত কাস্টম ক্লাস
+  size?: "sm" | "md" | "lg" | "xl" | "4xl" | "5xl" | "full" | "fit";
   children: ReactNode;
 }
 
@@ -19,7 +18,6 @@ export default function Modal({
   onClose,
   title = "",
   size = "xl",
-  className = "",
   children,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -61,8 +59,7 @@ export default function Modal({
     };
   }, [isOpen, onClose]);
 
-  // প্রি-ডিফাইন্ড সাইজ (সুবিধার জন্য)
-  const presetSizes: Record<string, string> = {
+  const sizeClasses = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
@@ -73,10 +70,7 @@ export default function Modal({
     fit: "w-screen h-screen max-w-none max-h-none p-1",
   };
 
-  // যদি size প্রপটি প্রি-ডিফাইন্ড তালিকায় থাকে, তাহলে তার ক্লাস নাও, নইলে size-টিকে সরাসরি ক্লাস হিসেবে ব্যবহার করো।
-  const sizeClass = presetSizes[size] || size;
-
-  const isFit = size === "fit" || sizeClass.includes("h-screen");
+  const isFit = size === "fit";
 
   return (
     <AnimatePresence>
@@ -88,10 +82,12 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
           />
 
-          {/* মডাল কন্টেইনার */}
           <div
             className={`fixed inset-0 flex items-center justify-center z-50 ${
               isFit ? "p-0" : "p-4"
@@ -106,20 +102,19 @@ export default function Modal({
               }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: isFit ? 1 : 0.95, y: isFit ? 0 : 20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className={`
-                relative w-full ${sizeClass} max-h-[90vh] overflow-hidden
+                relative w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden
                 rounded-md shadow-2xl border border-stone-200/50 dark:border-dark-border/50
                 ${isFit ? "rounded-none border-0 shadow-none" : ""}
-                ${className}
               `}
             >
-              {/* ===== ব্যাকগ্রাউন্ড – layout-এর মতো গ্রেডিয়েন্ট + স্প্ল্যাশ ===== */}
+              {/* ===== লেআউটের মতো এক্সাক্ট ব্যাকগ্রাউন্ড ===== */}
               <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated pointer-events-none">
-                {/* স্প্ল্যাশ সার্কেল */}
+                {/* Center splash */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div
-                    className="w-[600px] h-[600px] rounded-full blur-3xl"
+                    className="w-[800px] h-[800px] rounded-full blur-3xl"
                     style={{
                       background: `radial-gradient(circle at center, 
                         #D51B26 0%,
@@ -129,11 +124,11 @@ export default function Modal({
                         #8859F8 70%,
                         transparent 85%
                       )`,
-                      opacity: 0.2,
+                      opacity: 0.25,
                     }}
                   />
                   <div
-                    className="absolute w-[300px] h-[300px] rounded-full blur-2xl"
+                    className="absolute w-[400px] h-[400px] rounded-full blur-2xl"
                     style={{
                       background: `radial-gradient(circle at center, 
                         #D51B26 0%,
@@ -141,11 +136,11 @@ export default function Modal({
                         #1C08A9 50%,
                         transparent 80%
                       )`,
-                      opacity: 0.15,
+                      opacity: 0.2,
                     }}
                   />
                   <div
-                    className="absolute w-[800px] h-[800px] rounded-full blur-[80px]"
+                    className="absolute w-[1100px] h-[1100px] rounded-full blur-[100px]"
                     style={{
                       background: `radial-gradient(circle at center, 
                         #36A43D 0%,
@@ -154,19 +149,15 @@ export default function Modal({
                         #D51B26 60%,
                         transparent 80%
                       )`,
-                      opacity: 0.1,
+                      opacity: 0.15,
                     }}
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none"></div>
               </div>
 
-              {/* হেডার (স্বচ্ছ ব্যাকগ্রাউন্ডে) */}
-              <div
-                className={`border shadow-sm relative z-10 flex items-center justify-between p-2 border-b border-stone-200/50 dark:border-dark-border/50 ${
-                  isFit && " backdrop-blur-sm"
-                }`}
-              >
+              {/* হেডার – স্বচ্ছ ব্যাকগ্রাউন্ড */}
+              <div className="relative z-10 flex items-center justify-between p-2 border-b border-stone-200/50 dark:border-dark-border/50 bg-white/30 dark:bg-black/10 backdrop-blur-sm">
                 {title && (
                   <h3 className="text-xl font-bold text-gray-800 dark:text-stone-200 truncate">
                     {title}
@@ -182,7 +173,7 @@ export default function Modal({
                 </button>
               </div>
 
-              {/* কন্টেন্ট (স্ক্রোলযোগ্য) */}
+              {/* কন্টেন্ট */}
               <div
                 className={`relative z-10 overflow-y-auto ${
                   isFit

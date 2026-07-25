@@ -80,6 +80,7 @@ export default function ProductModal() {
           isOpen={true}
           onClose={() => router.back()}
           title={product.name}
+          disableOutsideClick={isVideoOpen} // ভিডিও খোলা থাকলে SideModal বাইরের ক্লিকে বন্ধ হবে না
         >
           <div className="p-1 md:p-3">{content}</div>
         </SideModal>
@@ -94,8 +95,8 @@ export default function ProductModal() {
         </Modal>
       )}
 
-      {/* ভিডিও মডাল – সবসময় কেন্দ্রীয় Modal */}
-      {isVideoOpen && product.videoUrl && (
+      {/* ভিডিও মডাল – সবসময় রেন্ডার (যদি ভিডিও URL থাকে) */}
+      {product.videoUrl && (
         <Modal
           isOpen={isVideoOpen}
           onClose={() => setIsVideoOpen(false)}

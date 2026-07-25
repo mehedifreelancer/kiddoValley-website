@@ -182,7 +182,7 @@ export default function ProductDetails({
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2  md:gap-8 lg:gap-12">
         <div className="w-full">
           <div className="relative aspect-[7/5] md:aspect-[5/5] lg:aspect-[5/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
             {/* মেইন সোয়াইপার – সবসময় রেন্ডার, থাম্বস রেফ দিয়ে আপডেট হবে */}
@@ -291,12 +291,6 @@ export default function ProductDetails({
                 {product.name}
               </h1>
             )}
-
-            {product.variants && product.variants.length > 1 && (
-              <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-                মোট {product.variants.length}টি ভেরিয়েন্ট
-              </p>
-            )}
           </div>
 
           {visibleAttributes.length > 0 && (
@@ -329,7 +323,7 @@ export default function ProductDetails({
             </div>
           )}
 
-          <div className="flex items-baseline justify-between  gap-2">
+          <div className="flex flex-col justify-between  gap-2">
             <div>
               <span className="text-3xl font-bold text-[#E57373]">
                 ৳{discountedPrice.toFixed(2)}
@@ -401,7 +395,7 @@ export default function ProductDetails({
             )}
           </div>
 
-          <div className="prose prose-stone dark:prose-invert max-w-none">
+          <div className="prose prose-stone dark:prose-invert max-w-none mt-5">
             <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
               আমরা বাংলায় ওয়েব ডেডলপমেন্ট নিয়ে কাজ করতে গিয়ে প্রথম যে সমস্যাটার
               মুখোমুখি হই, সেটা হলো, বাংলা ডেমো টেক্সট। ইংরেজির জন্য lorem ipsum
