@@ -1,18 +1,19 @@
 // app/products/[slug]/page.tsx
-import React from "react"; // Add this import
-import ProductDetails from "@/app/components/shared/ProductDetails";
-import { books } from "@/app/data/books";
 import { notFound } from "next/navigation";
+import ProductDetails from "@/app/components/shared/ProductDetails";
+import { getProductBySlug } from "../product.service";
 
-export default function ProductPage({
+export default async function ProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = React.use(params); // Unwrap the Promise
-  const product = books.find((p) => p.id === slug); // Using id as slug
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
 
-  if (!product) notFound();
+  if (!product) {
+    notFound();
+  }
 
   return (
     <div className="container-md mx-auto py-10">

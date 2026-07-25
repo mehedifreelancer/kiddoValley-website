@@ -1,210 +1,353 @@
-// components/products/ProductDetails.tsx
+// components/shared/ProductDetails.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Play, BookOpen, ChevronUp, ChevronDown } from "lucide-react";
-import { Book, books } from "@/app/data/books"; // Import Book type and books data
-import AddToCartButton from "./AddToCartButton";
+import {
+  Play,
+  BookOpen,
+  ChevronUp,
+  ChevronDown,
+  ShoppingCart,
+} from "lucide-react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Thumbs, Autoplay, FreeMode } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/thumbs";
+import "swiper/css/free-mode";
 import Button from "./Button";
 import Modal from "./Modal";
 import VideoModalContent from "./VideoModalContent";
-import RelatedProducts from "./RelatedProducts";
+import { Product } from "@/app/products/product.service";
+import { useGlobal } from "@/app/contexts/GlobalContext";
 
 interface ProductDetailsProps {
-  product: Book; // Using Book type
+  product: Product;
 }
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  const { addToCart, openCart } = useGlobal();
+  const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
+
+  // ===== সব ইমেজ সংগ্রহ =====
+  const allImages = useMemo(() => {
+    const imgs: string[] = [];
+    if (product?.thumbnailImage) imgs.push(product.thumbnailImage);
+    if (product?.variants && Array.isArray(product.variants)) {
+      product.variants.forEach((v) => {
+        if (v.imgUrl && !imgs.includes(v.imgUrl)) imgs.push(v.imgUrl);
+      });
+    }
+    return imgs;
+  }, [product]);
+
+  // ===== প্রাইমারি অ্যাট্রিবিউট =====
+  const primaryAttributes = product?.attributeOrderByPriority || [];
+
+  // ===== ডিফল্ট ভেরিয়েন্ট =====
+  const defaultVariant = useMemo(() => {
+    if (!product?.variants || product.variants.length === 0) return null;
+    return (
+      product.variants.find(
+        (v) => v.inStock === "in stock" || v.inStock === "less than 5",
+      ) || product.variants[0]
+    );
+  }, [product?.variants]);
+
+  const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
+  const currentVariant = selectedVariant || defaultVariant;
+
+  // ===== ফিল্টার স্টেট =====
+  const [filters, setFilters] = useState<Record<string, string>>(() => {
+    const defaultFilters: Record<string, string> = {};
+    primaryAttributes.forEach((attr) => {
+      defaultFilters[attr.key] = attr.values.length > 0 ? attr.values[0] : "";
+    });
+    return defaultFilters;
+  });
+
+  // ===== ফিল্টার পরিবর্তন =====
+  const handleFilterChange = (key: string, value: string) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+
+    const matched = product.variants.find((v) =>
+      Object.entries(newFilters).every(([k, val]) => {
+        if (!val) return true;
+        return v.attributes?.[k] === val;
+      }),
+    );
+    if (matched) {
+      setSelectedVariant(matched);
+    }
+  };
+
+  // ===== ডিসপ্লে ডেটা =====
+  const displayPrice = currentVariant?.price ?? 0;
+  const displayDiscount = currentVariant?.discount ?? 0;
+  const displayInStock = currentVariant?.inStock || "out of stock";
+  const discountedPrice =
+    displayDiscount > 0
+      ? displayPrice - (displayPrice * displayDiscount) / 100
+      : displayPrice;
+
+  const stockStatusColor =
+    {
+      "in stock":
+        "text-emerald-700 bg-emerald-50 dark:bg-gray-950/60 dark:text-emerald-400",
+      "less than 5":
+        "text-amber-700 bg-amber-50 dark:bg-gray-950/60 dark:text-amber-400",
+      "out of stock":
+        "text-rose-700 bg-rose-50 dark:bg-gray-950/60 dark:text-rose-400",
+    }[displayInStock] ||
+    "text-stone-600 bg-stone-100 dark:bg-stone-800 dark:text-stone-400";
+
+  const stockLabel =
+    {
+      "in stock": "স্টকে আছে",
+      "less than 5": "সীমিত স্টক",
+      "out of stock": "স্টক শেষ",
+    }[displayInStock] || displayInStock;
+
+  // ===== কার্টে যোগ =====
+  const handleAddToCart = () => {
+    if (!currentVariant) return;
+    const uniqueId = `${product.id}-${currentVariant.sku}`;
+    addToCart({
+      id: uniqueId,
+      name: product.name,
+      price: displayPrice,
+      imageUrl:
+        currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
+      sku: currentVariant.sku,
+      variant: currentVariant,
+      quantity: 1,
+    });
+    openCart();
+  };
+
   const [quantity, setQuantity] = useState(1);
+  const handleIncrement = () => setQuantity((q) => q + 1);
+  const handleDecrement = () => setQuantity((q) => Math.max(1, q - 1));
+
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
-  const handleIncrement = () => setQuantity((prev) => prev + 1);
-  const handleDecrement = () =>
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-
-  // Get related products (same category, exclude current)
-  const relatedProducts = books
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-
   return (
-    <>
-      <div className="space-y-8">
-        {/* Main Product Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left Side - Product Image */}
-          <div className="relative aspect-[4/5] w-full max-w-md mx-auto lg:mx-0 rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <BookOpen
-                  size={64}
-                  className="text-stone-300 dark:text-stone-600"
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      {/* ─── LEFT: Swiper Gallery ─── */}
+      <div className="w-full max-w-md mx-auto lg:mx-0">
+        {/* Main Swiper */}
+        <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
+          <Swiper
+            modules={[Navigation, Thumbs, Autoplay]}
+            navigation
+            autoplay={{ delay: 4000, disableOnInteraction: false }}
+            loop={allImages.length > 1}
+            thumbs={{ swiper: thumbsSwiper }}
+            className="w-full h-full"
+          >
+            {allImages.map((img, idx) => (
+              <SwiperSlide key={idx} className="relative w-full h-full">
+                <Image
+                  src={img}
+                  alt={`${product.name} - ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  unoptimized
                 />
-              </div>
-            )}
+              </SwiperSlide>
+            ))}
+          </Swiper>
 
-            {/* Category Badge */}
-            <span className="absolute top-4 left-4 px-3 py-1.5 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border">
-              {product.category}
+          {/* ব্যাজ */}
+          {displayDiscount > 0 && (
+            <span className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-sm font-bold rounded-lg shadow-md">
+              -{displayDiscount}%
             </span>
-
-            {/* Rating Badge */}
-            <div className="absolute bottom-4 left-4 flex items-center gap-1 px-3 py-1.5 bg-amber-400 text-amber-900 rounded-full text-sm font-medium">
-              <span>★</span>
-              <span>{product.rating}</span>
-            </div>
-
-            {/* Age Range Badge */}
-            <span className="absolute top-4 right-4 px-3 py-1.5 bg-[#7986CB] text-white rounded-full text-sm font-medium">
-              {product.ageRange}
-            </span>
-          </div>
-
-          {/* Right Side - Product Info */}
-          <div className="space-y-6">
-            {/* Title and Author */}
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
-                {product.name}
-              </h1>
-              <p className="text-lg text-stone-600 dark:text-stone-400">
-                লিখেছেন: {product.author}
-              </p>
-            </div>
-
-            {/* Description - Using a default description since your Book type doesn't have it */}
-            <div className="prose prose-stone dark:prose-invert max-w-none">
-              <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                {product.description ||
-                  `${product.name} বইটি ${product.ageRange} বয়সী শিশুদের জন্য একটি চমৎকার ${product.category} গল্প।`}
-              </p>
-            </div>
-
-            {/* Product Specs - Using available fields */}
-            <div className="grid grid-cols-2 gap-4 py-4 border-y border-stone-200 dark:border-dark-border">
-              <div>
-                <p className="text-sm text-stone-500 dark:text-stone-500">
-                  বয়স
-                </p>
-                <p className="font-medium text-stone-800 dark:text-stone-200">
-                  {product.ageRange}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-stone-500 dark:text-stone-500">
-                  ধরণ
-                </p>
-                <p className="font-medium text-stone-800 dark:text-stone-200">
-                  {product.category}
-                </p>
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#E57373]">
-                ৳{product.price.toFixed(2)}
-              </span>
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                পরিমাণ:
-              </span>
-              <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
-                <button
-                  onClick={handleDecrement}
-                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
-                >
-                  <ChevronDown
-                    size={18}
-                    className="text-stone-600 dark:text-stone-400"
-                  />
-                </button>
-                <span className="w-12 text-center font-medium text-stone-800 dark:text-stone-200">
-                  {quantity}
-                </span>
-                <button
-                  onClick={handleIncrement}
-                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
-                >
-                  <ChevronUp
-                    size={18}
-                    className="text-stone-600 dark:text-stone-400"
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <div className="flex-1">
-                <AddToCartButton
-                  productId={product.id}
-                  productName={product.name}
-                  price={product.price}
-                  onAddToCart={(qty) =>
-                    console.log(`Added ${qty} of ${product.id}`)
-                  }
-                />
-              </div>
-
-              {product.videoUrl && (
-                <Button
-                  variant="secondary"
-                  size="md"
-                  icon={<Play size={18} />}
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="flex-1"
-                >
-                  ভিডিও দেখুন
-                </Button>
-              )}
-            </div>
-
-            {/* Additional Info */}
-            <div className="text-sm text-stone-500 dark:text-stone-500 pt-4">
-              <p>✓ ফ্রি শিপিং (৫০০+ টাকার অর্ডারে)</p>
-              <p>✓ ৭ দিনের মধ্যে রিটার্ন</p>
-              <p>✓ পেমেন্ট অন ডেলিভারি</p>
-            </div>
-          </div>
+          )}
+          <span
+            className={`absolute top-4 right-4 z-10 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm ${stockStatusColor}`}
+          >
+            {stockLabel}
+          </span>
+          <span className="absolute bottom-4 left-4 z-10 px-3 py-1.5 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border">
+            {product.category?.name || "ক্যাটাগরি"}
+          </span>
         </div>
 
-        {/* You May Also Like Section */}
-        {relatedProducts.length > 0 && (
-          <RelatedProducts
-            products={relatedProducts}
-            title="আপনি আরও পছন্দ করতে পারেন"
-          />
+        {/* Thumbnail Swiper */}
+        {allImages.length > 1 && (
+          <div className="mt-4">
+            <Swiper
+              modules={[Navigation, Thumbs, FreeMode]}
+              onSwiper={setThumbsSwiper}
+              freeMode
+              watchSlidesProgress
+              spaceBetween={8}
+              slidesPerView={Math.min(allImages.length, 5)}
+              className="w-full"
+            >
+              {allImages.map((img, idx) => (
+                <SwiperSlide key={idx}>
+                  <div className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-rose-500 transition-all">
+                    <Image
+                      src={img}
+                      alt={`Thumbnail ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      unoptimized
+                    />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         )}
       </div>
 
-      {/* Video Modal */}
-      {isVideoModalOpen && (
+      {/* ─── RIGHT: প্রোডাক্ট তথ্য ─── */}
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
+            {product.name}
+          </h1>
+          <p className="text-lg text-stone-600 dark:text-stone-400">
+            {product.category?.name || "বই"}
+          </p>
+        </div>
+
+        {/* বিবরণ */}
+        <div className="prose prose-stone dark:prose-invert max-w-none">
+          <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
+            {product.description || `${product.name} – একটি চমৎকার বই।`}
+          </p>
+        </div>
+
+        {/* ─── অ্যাট্রিবিউট ফিল্টার ─── */}
+        {primaryAttributes.length > 0 && (
+          <div className="space-y-3">
+            {primaryAttributes.map((attr) => {
+              const currentValue = filters[attr.key] || "";
+              return (
+                <div key={attr.key}>
+                  <label className="text-sm font-medium text-stone-700 dark:text-stone-300 block mb-1">
+                    {attr.key}:
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {attr.values.length > 0 ? (
+                      attr.values.map((val) => (
+                        <button
+                          key={val}
+                          onClick={() => handleFilterChange(attr.key, val)}
+                          className={`px-3 py-1 text-sm rounded-full border transition-all ${
+                            currentValue === val
+                              ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700"
+                              : "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200"
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">—</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* দাম */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold text-[#E57373]">
+            ৳{discountedPrice.toFixed(2)}
+          </span>
+          {displayDiscount > 0 && (
+            <del className="text-sm text-stone-400 dark:text-stone-500 line-through">
+              ৳{displayPrice.toFixed(2)}
+            </del>
+          )}
+        </div>
+
+        {/* পরিমাণ */}
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+            পরিমাণ:
+          </span>
+          <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
+            <button
+              onClick={handleDecrement}
+              className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+            >
+              <ChevronDown
+                size={18}
+                className="text-stone-600 dark:text-stone-400"
+              />
+            </button>
+            <span className="w-12 text-center font-medium text-stone-800 dark:text-stone-200">
+              {quantity}
+            </span>
+            <button
+              onClick={handleIncrement}
+              className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+            >
+              <ChevronUp
+                size={18}
+                className="text-stone-600 dark:text-stone-400"
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* অ্যাকশন বাটন */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <Button
+            variant="primary"
+            size="md"
+            icon={<ShoppingCart size={18} />}
+            onClick={handleAddToCart}
+            disabled={displayInStock === "out of stock"}
+            className="flex-1"
+          >
+            {displayInStock === "out of stock" ? "স্টক শেষ" : "কার্টে যোগ করুন"}
+          </Button>
+
+          {product.videoUrl && (
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Play size={18} />}
+              onClick={() => setIsVideoModalOpen(true)}
+              className="flex-1"
+            >
+              ভিডিও দেখুন
+            </Button>
+          )}
+        </div>
+
+        {/* অতিরিক্ত তথ্য */}
+        <div className="text-sm text-stone-500 dark:text-stone-500 pt-4 space-y-1">
+          <p>✓ ফ্রি শিপিং (৫০০+ টাকার অর্ডারে)</p>
+          <p>✓ ৭ দিনের মধ্যে রিটার্ন</p>
+          <p>✓ পেমেন্ট অন ডেলিভারি</p>
+        </div>
+      </div>
+
+      {/* ভিডিও মডাল */}
+      {isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
           onClose={() => setIsVideoModalOpen(false)}
           title={`${product.name} - ভিডিও প্রিভিউ`}
           size="lg"
         >
-          <VideoModalContent
-            videoUrl={product.videoUrl || ""}
-            title={product.name}
-          />
+          <VideoModalContent videoUrl={product.videoUrl} title={product.name} />
         </Modal>
       )}
-    </>
+    </div>
   );
 }

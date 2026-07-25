@@ -9,20 +9,61 @@ import ProductCard from "./ProductCard";
 import { useEffect, useRef } from "react";
 import { getPublicProducts, Product } from "@/app/products/product.service";
 
-// Map API product to Book type expected by ProductCard
-const mapProductToBook = (product: Product): any => ({
-  id: String(product.id),
-  name: product.name,
-  price: product.price,
-  discount: product.discount,
-  imageUrl: product.thumbnailImage?.[0]?.imgUrl || "/placeholder.jpg",
-  category: product.category?.name || "Uncategorized",
-  author: product.sku || "Unknown Author",
-  rating: 4.5, // you can compute this from reviews
-  videoUrl: product.videoUrl || null,
-  inStock: product.inStock || "out of stock",
-  variants: product.variants || {},
-});
+// ✅ নিরাপদ ম্যাপিং ফাংশন – API প্রোডাক্টকে ProductCard-এর জন্য উপযুক্ত অবজেক্টে রূপান্তর
+// AllProductSection.tsx - mapProductToBook ফাংশন
+const mapProductToBook = (product: Product): any => {
+  if (!product) {
+    return {
+      id: "0",
+      name: "Unknown",
+      slug: "unknown",
+      price: 0,
+      discount: 0,
+      imageUrl: "/placeholder.jpg",
+      category: "Uncategorized",
+      author: "Unknown",
+      rating: 4.5,
+      videoUrl: null,
+      inStock: "out of stock",
+      variants: [],
+      attributeOrderByPriority: [],
+      thumbnailImage: "/placeholder.jpg",
+      isForceOrder: false,
+      forceOrderPriority: 0,
+      isPublished: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  const defaultVariant = product.variants?.[0];
+  const defaultPrice = defaultVariant?.price ?? 0;
+  const defaultDiscount = defaultVariant?.discount ?? 0;
+  const defaultInStock = defaultVariant?.inStock ?? "out of stock";
+
+  return {
+    id: String(product.id),
+    name: product.name,
+    slug: product.slug,
+    price: defaultPrice,
+    discount: defaultDiscount,
+    imageUrl: product.thumbnailImage || "/placeholder.jpg",
+    category: product.category?.name || "Uncategorized",
+    author: product.variants?.[0]?.sku || "Unknown Author",
+    rating: 4.5,
+    videoUrl: product.videoUrl || null,
+    inStock: defaultInStock,
+    variants: product.variants || [], // ✅ এখন attributes আছে
+    attributeOrderByPriority: product.attributeOrderByPriority || [],
+    thumbnailImage: product.thumbnailImage || "/placeholder.jpg",
+    categoryObj: product.category,
+    isForceOrder: product.isForceOrder,
+    forceOrderPriority: product.forceOrderPriority,
+    isPublished: product.isPublished,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+  };
+};
 export default function AllProductSection() {
   const {
     data,
@@ -64,8 +105,8 @@ export default function AllProductSection() {
 
   if (isLoading) {
     return (
-      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
-        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50 ">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px]">
           <div className="flex justify-center items-center min-h-[300px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           </div>
@@ -77,7 +118,7 @@ export default function AllProductSection() {
   if (isError) {
     return (
       <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
-        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 text-center my-[50px]">
           <p className="text-red-500">Failed to load products.</p>
         </div>
       </section>
@@ -87,7 +128,7 @@ export default function AllProductSection() {
   if (products.length === 0) {
     return (
       <section className="">
-        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px] text-center">
           <p className="text-gray-500">No products found.</p>
         </div>
       </section>
@@ -96,7 +137,7 @@ export default function AllProductSection() {
 
   return (
     <section className="">
-      <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

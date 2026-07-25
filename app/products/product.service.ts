@@ -42,3 +42,10 @@ export const getPublicProducts = async (
   if (forceOrder) url += `&forceOrder=true`;
   return apiClient<ProductsResponse>(url);
 };
+
+// app/products/product.service.ts
+export const getProductBySlug = async (slug: string): Promise<Product> => {
+  const url = `/public/product/${slug}`;
+  const response = await apiClient<{ success: boolean; data: Product }>(url);
+  return response.data;
+};
