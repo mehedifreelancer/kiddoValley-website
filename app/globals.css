@@ -59,25 +59,26 @@ body {
   @apply bg-cream-100 dark:bg-dark-bg text-stone-800 dark:text-stone-300 transition-colors duration-700;
   font-family: 'Li Alinur Showpnocari', 'Noto Sans Bengali', 'Tiro Bangla', system-ui, sans-serif;
 }
+
 @theme {
   /* Your Logo Colors as Accents */
   --color-logo-red: #D51B26;
   --color-logo-blue: #1C08A9;
   --color-logo-purple: #8859F8;
   --color-logo-green: #36A43D;
-  
+
   /* Soft versions for backgrounds */
   --color-logo-red-soft: #fce8e9;
   --color-logo-blue-soft: #e8e6ff;
   --color-logo-purple-soft: #f3eeff;
   --color-logo-green-soft: #e6f3e7;
-  
+
   /* Creamy Light Mode Base */
   --color-cream-50: #fefcf7;
   --color-cream-100: #fdf9f0;
   --color-cream-200: #fcf3e6;
   --color-cream-300: #faecdb;
-  
+
   /* Elegant Neutrals */
   --color-stone-100: #f5f1ea;
   --color-stone-200: #e8e2d9;
@@ -88,7 +89,7 @@ body {
   --color-stone-700: #62584e;
   --color-stone-800: #463e37;
   --color-stone-900: #2c2722;
-  
+
   /* Gentle Dark Mode */
   --color-dark-bg: #1a1b1f;
   --color-dark-surface: #25282e;
@@ -116,9 +117,17 @@ body {
 .border-logo-gradient {
   border-image: linear-gradient(to right, #D51B26, #8859F8, #1C08A9) 1;
 }
+
 @keyframes gentlePulse {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .splash-glow {
@@ -153,16 +162,33 @@ body {
 }
 
 /* Responsive padding */
-@media (width >= 640px) {
-  .container-xs, .container-sm, .container-md {
+@media (width >=640px) {
+
+  .container-xs,
+  .container-sm,
+  .container-md {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
-@media (width >= 1024px) {
-  .container-xs, .container-sm, .container-md {
+@media (width >=1024px) {
+
+  .container-xs,
+  .container-sm,
+  .container-md {
     padding-left: 2rem;
     padding-right: 2rem;
   }
+}
+
+/* globals.css */
+.youtube-embed iframe {
+  pointer-events: none;
+}
+
+.youtube-embed iframe::after {
+  content: '';
+  position: absolute;
+  /* নির্দিষ্ট পজিশনে লোগো কভার করো */
 }
