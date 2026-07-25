@@ -14,7 +14,7 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -114,7 +114,7 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
         {!isLoaded && (
           <div className="absolute inset-0 z-10">
             <img
-              src={`https://youtube.com{videoId}/maxresdefault.jpg`}
+              src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
               alt="Video thumbnail"
               className="object-cover w-full h-full"
             />
@@ -152,55 +152,54 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
       </div>
 
       {/* নিচের নতুন কাস্টম কন্ট্রোল প্যানেল */}
-      {isLoaded && (
-        <div className="bg-gray-200 dark:bg-gray-900 px-2 py-3 flex flex-col gap-2">
-          {/* প্রোগ্রেস বার (Time Seek) */}
-          <div className="flex items-center gap-3 w-full">
-            <span className="text-xs text-gray-400 font-mono min-w-[35px] text-right">
-              {formatTime(currentTime)}
-            </span>
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeekChange}
-              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:h-2 transition-all"
-            />
-            <span className="text-xs text-gray-400 font-mono min-w-[35px]">
-              {formatTime(duration)}
-            </span>
 
-            <button
-              onClick={toggleMute}
-              className="text-gray-300  hover:text-white  p-1 rounded-lg transition-all active:scale-95 shadow-inner "
-              title={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <VolumeX size={18} className="text-rose-400" />
-              ) : (
-                <Volume2 size={18} />
-              )}
-            </button>
-          </div>
+      <div className="bg-gray-200 dark:bg-gray-900 px-2 py-3 flex flex-col gap-2">
+        {/* প্রোগ্রেস বার (Time Seek) */}
+        <div className="flex items-center gap-3 w-full">
+          <span className="text-xs text-gray-400 font-mono min-w-[35px] text-right">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeekChange}
+            className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:h-2 transition-all"
+          />
+          <span className="text-xs text-gray-400 font-mono min-w-[35px]">
+            {formatTime(duration)}
+          </span>
 
-          {/* কন্ট্রোলারের নিচের ৩-কলাম গ্রিড লেআউট */}
-          <div className="flex border-t border-gray-300 dark:border-gray-800  justify-center items-center mt-1">
-            {/* ২. মাঝখানে (Center): প্লে এবং পজ বাটন */}
-            <button
-              onClick={togglePlay}
-              className="mt-2 text-white hover:text-rose-500 bg-gray-800 hover:bg-gray-700 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md border border-gray-700"
-              title={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? (
-                <Pause size={18} className="fill-white text-white" />
-              ) : (
-                <Play size={18} className="fill-white text-white ml-0.5" />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={toggleMute}
+            className="text-gray-300  hover:text-white  p-1 rounded-lg transition-all active:scale-95 shadow-inner "
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? (
+              <VolumeX size={18} className="text-rose-400" />
+            ) : (
+              <Volume2 size={18} />
+            )}
+          </button>
         </div>
-      )}
+
+        {/* কন্ট্রোলারের নিচের ৩-কলাম গ্রিড লেআউট */}
+        <div className="flex border-t border-gray-300 dark:border-gray-800  justify-center items-center mt-1">
+          {/* ২. মাঝখানে (Center): প্লে এবং পজ বাটন */}
+          <button
+            onClick={togglePlay}
+            className="mt-2 text-white hover:text-rose-500 bg-gray-800 hover:bg-gray-700 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md border border-gray-700"
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? (
+              <Pause size={18} className="fill-white text-white" />
+            ) : (
+              <Play size={18} className="fill-white text-white ml-0.5" />
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

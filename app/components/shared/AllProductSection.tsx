@@ -1,9 +1,7 @@
 // components/products/AllProductSection.tsx
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
 import { useEffect, useRef } from "react";

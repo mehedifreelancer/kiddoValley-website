@@ -1,0 +1,165 @@
+// components/shared/SideModal.tsx
+"use client";
+
+import { useEffect, useRef, ReactNode, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
+
+interface SideModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  className?: string;
+  children: ReactNode;
+}
+
+export default function SideModal({
+  isOpen,
+  onClose,
+  title = "",
+  className = "",
+  children,
+}: SideModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
+  const handleCloseTrigger = () => {
+    setIsAnimatingOut(true);
+    setTimeout(() => {
+      onClose();
+    }, 350); // মডাল স্লাইড আউট হওয়ার জন্য ৩৫Groupms সময় দেওয়া হলো
+  };
+
+  useEffect(() => {
+    if (!isOpen && !isAnimatingOut) {
+      setIsAnimatingOut(true);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        handleCloseTrigger();
+      }
+    };
+
+    if (isOpen && !isAnimatingOut) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, isAnimatingOut]);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleCloseTrigger();
+      }
+    };
+
+    if (isOpen && !isAnimatingOut) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, isAnimatingOut]);
+
+  const shouldRender = isOpen && !isAnimatingOut;
+
+  return (
+    <AnimatePresence>
+      {shouldRender && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* ব্যাকড্রপ (আবছা কালো পর্দা) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCloseTrigger}
+          />
+
+          {/* সাইড মডাল বডি (শুধুমাত্র Slide-ইন এবং Slide-আউট) */}
+          <motion.div
+            ref={modalRef}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+            className={`
+              relative h-full w-full max-w-full z-10
+              overflow-hidden shadow-2xl 
+              bg-white dark:bg-dark-surface
+              ${className}
+            `}
+          >
+            {/* ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট */}
+            <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className="w-[400px] h-[400px] rounded-full blur-3xl"
+                  style={{
+                    background: `radial-gradient(circle at center, #D51B26 0%, #8859F8 20%, #1C08A9 40%, #36A43D 60%, #8859F8 70%, transparent 85%)`,
+                    opacity: 0.2,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* হেডার */}
+            <div className="relative z-10 flex items-center p-3 border-b border-stone-200/50 dark:border-dark-border/50 bg-white/30 dark:bg-black/10 backdrop-blur-sm">
+              <button
+                onClick={handleCloseTrigger}
+                className="p-2 rounded-lg hover:bg-stone-100/50 dark:hover:bg-dark-elevated/50 transition-colors"
+                aria-label="Go back"
+              >
+                <ChevronLeft
+                  size={24}
+                  className="text-stone-600 dark:text-stone-400"
+                />
+              </button>
+              {title && (
+                <h3 className="ml-2 text-xl font-bold text-gray-800 dark:text-stone-200 truncate">
+                  {title}
+                </h3>
+              )}
+            </div>
+
+            {/* মডাল কন্টেন্ট */}
+            <div className="relative z-10 h-[calc(100vh-70px)] overflow-y-auto p-4">
+              {children}
+            </div>
+
+            {/* ফ্লোটিং ক্লোজ বাটন */}
+            <button
+              onClick={handleCloseTrigger}
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 
+                bg-white/90 dark:bg-black/60 backdrop-blur-md 
+                text-stone-800 dark:text-white 
+                w-14 h-14 rounded-full shadow-2xl 
+                flex items-center justify-center 
+                border border-stone-200/50 dark:border-white/20
+                hover:scale-105 active:scale-95 transition-transform duration-200"
+              aria-label="Close"
+            >
+              <ChevronLeft
+                size={32}
+                className="text-stone-800 dark:text-white"
+              />
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}

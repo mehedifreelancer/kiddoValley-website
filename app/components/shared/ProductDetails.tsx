@@ -1,7 +1,6 @@
-// components/shared/ProductDetails.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
   Play,
@@ -9,6 +8,8 @@ import {
   ChevronUp,
   ChevronDown,
   ShoppingCart,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
@@ -24,11 +25,18 @@ import { useGlobal } from "@/app/contexts/GlobalContext";
 
 interface ProductDetailsProps {
   product: Product;
+  showIngInModal: boolean;
 }
 
-export default function ProductDetails({ product }: ProductDetailsProps) {
+export default function ProductDetails({
+  product,
+  showIngInModal,
+}: ProductDetailsProps) {
   const { addToCart, openCart } = useGlobal();
-  const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
+
+  // ===== থাম্বনেইল সোয়াইপারের জন্য রেফ (স্টেট নয়) =====
+  const thumbsSwiperRef = useRef<any>(null);
+
   const [quantity, setQuantity] = useState(1);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
@@ -98,30 +106,33 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       "out of stock": "স্টক শেষ",
     }[displayInStock] || displayInStock;
 
-  // ===== ফিল্টার পরিবর্তন =====
-  const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
+  // ===== ফিল্টার পরিবর্তন (মেমোয়াইজড) =====
+  const handleFilterChange = useCallback(
+    (key: string, value: string) => {
+      const newFilters = { ...filters, [key]: value };
+      setFilters(newFilters);
 
-    const matched = product.variants.find((v) =>
-      Object.entries(newFilters).every(([k, val]) => {
-        if (!val) return true;
-        return v.attributes?.[k] === val;
-      }),
-    );
-    if (matched) {
-      setSelectedVariant(matched);
-      const idx = allImages.indexOf(
-        matched.imgUrl || product.thumbnailImage || "",
+      const matched = product.variants.find((v) =>
+        Object.entries(newFilters).every(([k, val]) => {
+          if (!val) return true;
+          return v.attributes?.[k] === val;
+        }),
       );
-      if (idx !== -1 && thumbsSwiper) {
-        thumbsSwiper.slideTo(idx);
+      if (matched) {
+        setSelectedVariant(matched);
+        const idx = allImages.indexOf(
+          matched.imgUrl || product.thumbnailImage || "",
+        );
+        if (idx !== -1 && thumbsSwiperRef.current) {
+          thumbsSwiperRef.current.slideTo(idx);
+        }
       }
-    }
-  };
+    },
+    [filters, product, allImages],
+  );
 
-  // ===== কার্টে যোগ =====
-  const handleAddToCart = () => {
+  // ===== কার্টে যোগ (মেমোয়াইজড) =====
+  const handleAddToCart = useCallback(() => {
     if (!currentVariant) return;
     const uniqueId = `${product.id}-${currentVariant.sku}`;
     addToCart({
@@ -135,10 +146,15 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       quantity: 1,
     });
     openCart();
-  };
+  }, [currentVariant, product, displayPrice, addToCart, openCart]);
 
-  const handleIncrement = () => setQuantity((q) => q + 1);
-  const handleDecrement = () => setQuantity((q) => Math.max(1, q - 1));
+  const handleIncrement = useCallback(() => setQuantity((q) => q + 1), []);
+  const handleDecrement = useCallback(
+    () => setQuantity((q) => Math.max(1, q - 1)),
+    [],
+  );
+  const handleVideoOpen = useCallback(() => setIsVideoModalOpen(true), []);
+  const handleVideoClose = useCallback(() => setIsVideoModalOpen(false), []);
 
   // ===== শুধু ভ্যালুওয়ালা অ্যাট্রিবিউট =====
   const visibleAttributes = primaryAttributes.filter(
@@ -147,14 +163,17 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        {/* ─── LEFT: ইমেজ স্লাইডার (Swiper) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
         <div className="w-full">
-          <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
+          <div className="relative aspect-[7/5] md:aspect-[5/5] lg:aspect-[5/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
+            {/* প্রধান সোয়াইপার */}
             <Swiper
               spaceBetween={10}
-              navigation={true}
-              thumbs={{ swiper: thumbsSwiper }}
+              navigation={{
+                prevEl: ".custom-swiper-button-prev",
+                nextEl: ".custom-swiper-button-next",
+              }}
+              thumbs={{ swiper: thumbsSwiperRef.current }}
               modules={[FreeMode, Navigation, Thumbs]}
               className="h-full w-full"
               autoplay={false}
@@ -186,7 +205,17 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               )}
             </Swiper>
 
-            {/* ব্যাজ: ডিসকাউন্ট ও স্টক */}
+            {/* কাস্টম নেভিগেশন বাটন */}
+            <div className="absolute inset-0 pointer-events-none z-20">
+              <button className="custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+                <ChevronLeft size={18} />
+              </button>
+              <button className="custom-swiper-button-next absolute right-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* ব্যাজ */}
             {displayDiscount > 0 && (
               <span className="absolute top-4 left-4 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-sm font-bold rounded-lg shadow-md z-10">
                 -{displayDiscount}%
@@ -202,27 +231,29 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             </span>
           </div>
 
-          {/* থাম্বনেইল স্লাইডার */}
+          {/* থাম্বনেইল সোয়াইপার (রেফ দিয়ে) */}
           {allImages.length > 1 && (
             <div className="mt-3">
               <Swiper
-                onSwiper={setThumbsSwiper}
+                onSwiper={(swiper) => {
+                  thumbsSwiperRef.current = swiper;
+                }}
                 spaceBetween={8}
                 slidesPerView={4}
                 freeMode={true}
                 watchSlidesProgress={true}
                 modules={[FreeMode, Navigation, Thumbs]}
                 className="thumbs-swiper"
+                
               >
                 {allImages.map((img, idx) => (
                   <SwiperSlide key={idx}>
-                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-transparent hover:border-rose-500 transition-colors cursor-pointer">
+                    <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden border-2 border-transparent hover:border-rose-500 transition-colors cursor-pointer">
                       <Image
                         src={img}
                         alt={`Thumbnail ${idx + 1}`}
                         fill
                         className="object-cover"
-                        sizes="80px"
                         unoptimized
                       />
                     </div>
@@ -236,22 +267,31 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         {/* ─── RIGHT: প্রোডাক্ট তথ্য ─── */}
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
-              {product.name}
-            </h1>
-            <p className="text-lg text-stone-600 dark:text-stone-400">
-              {product.category?.name || "বই"}
-            </p>
+            {!showIngInModal && (
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
+                {product.name}
+              </h1>
+            )}
+
+            <div>
+              {/* ❗ এখানে হার্ডকোডেড টেক্সট আছে – আপনি চাইলে product.description দিয়ে প্রতিস্থাপন করতে পারেন */}
+              বহুকাল হইলো আমি একবার পালামৌ প্রদেশে গিয়াছিলাম, প্রত্যাগমন করিলে
+              পর সেই অঞ্চলের বৃত্তান্ত লিখিবার নিমিত্ত দুই-এক জন বন্ধুবান্ধব
+              আমাকে পুনঃপুন অনুরোধ করিতেন, আমি তখন তাঁহাদের উপহাস করিতাম। বহুকাল
+              হইলো আমি একবার পালামৌ প্রদেশে গিয়াছিলাম, প্রত্যাগমন করিলে পর সেই
+              অঞ্চলের বৃত্তান্ত লিখিবার নিমিত্ত দুই-এক জন বন্ধুবান্ধব আমাকে
+              পুনঃপুন অনুরোধ করিতেন, আমি তখন তাঁহাদের উপহাস করিতাম।
+            </div>
           </div>
 
           {/* বিবরণ */}
           <div className="prose prose-stone dark:prose-invert max-w-none">
             <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-              {product.description || `${product.name} – একটি চমৎকার বই।`}
+              {product.description}
             </p>
           </div>
 
-          {/* ─── অ্যাট্রিবিউট ফিল্টার (শুধু ভ্যালুওয়ালা) ─── */}
+          {/* ─── অ্যাট্রিবিউট ফিল্টার ─── */}
           {visibleAttributes.length > 0 && (
             <div className="space-y-3">
               {visibleAttributes.map((attr) => {
@@ -282,7 +322,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             </div>
           )}
 
-          {/* দাম ও ডিসকাউন্ট */}
+          {/* দাম */}
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-[#E57373]">
               ৳{discountedPrice.toFixed(2)}
@@ -349,37 +389,30 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                 variant="secondary"
                 size="md"
                 icon={<Play size={18} />}
-                onClick={() => setIsVideoModalOpen(true)}
+                onClick={handleVideoOpen}
                 className="flex-1"
               >
                 ভিডিও দেখুন
               </Button>
             )}
           </div>
-
-          {/* অতিরিক্ত তথ্য */}
-          <div className="text-sm text-stone-500 dark:text-stone-500 pt-4 space-y-1">
-            <p>✓ ফ্রি শিপিং (৫০০+ টাকার অর্ডারে)</p>
-            <p>✓ ৭ দিনের মধ্যে রিটার্ন</p>
-            <p>✓ পেমেন্ট অন ডেলিভারি</p>
-          </div>
         </div>
       </div>
 
-      {/* ─── ভিডিও মডাল (কম্পোনেন্টের একদম শেষে) ─── */}
+      {/* ─── ভিডিও মডাল ─── */}
       {isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
-          onClose={() => setIsVideoModalOpen(false)}
+          onClose={handleVideoClose}
           title={`${product.name} - ভিডিও প্রিভিউ`}
-          size="lg"
+          size="full"
         >
           <VideoModalContent
             key={product.videoUrl}
             videoUrl={product.videoUrl}
             title={product.name}
           />
-        </Modal>    
+        </Modal>
       )}
     </>
   );

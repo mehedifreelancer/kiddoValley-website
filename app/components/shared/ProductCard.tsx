@@ -244,21 +244,6 @@ export default function ProductCard({
                 {stockLabel}
               </span>
             </div>
-
-            {product.videoUrl && (
-              <div className="absolute bottom-3 right-3 z-10">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleViewVideo();
-                  }}
-                  className="flex items-center gap-1.5 bg-black/60 backdrop-blur-sm hover:bg-black/75 text-white rounded-full px-3 py-1.5 text-xs font-medium transition-colors shadow-lg"
-                >
-                  <Play size={14} className="fill-white" />
-                  ভিডিও
-                </button>
-              </div>
-            )}
           </Link>
         </div>
 
