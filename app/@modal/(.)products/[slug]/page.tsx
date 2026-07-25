@@ -15,7 +15,7 @@ export default function ProductModal() {
   const router = useRouter();
   const { slug } = useParams<{ slug: string }>();
   const [isVideoOpen, setIsVideoOpen] = useState(false);
-  const { isMobile, isDesktop } = useDeviceDetect(768); // 768px ব্রেকপয়েন্ট
+  const { isMobile } = useDeviceDetect(768);
 
   const {
     data: product,
@@ -29,14 +29,12 @@ export default function ProductModal() {
     gcTime: 10 * 60 * 1000,
   });
 
-  // লোডিং স্ক্রিন
   if (isLoading) {
     const Loader = () => (
       <div className="p-8 flex justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-500" />
       </div>
     );
-
     if (isMobile) {
       return (
         <SideModal
@@ -65,7 +63,6 @@ export default function ProductModal() {
     return null;
   }
 
-  // মূল কন্টেন্ট
   const content = (
     <ProductDetails
       product={product}
@@ -75,41 +72,9 @@ export default function ProductModal() {
     />
   );
 
-  // ভিডিও মডাল (মোবাইল/ডেস্কটপ আলাদা)
-  const videoModal =
-    isVideoOpen &&
-    product.videoUrl &&
-    (isMobile ? (
-      <SideModal
-        isOpen={isVideoOpen}
-        onClose={() => setIsVideoOpen(false)}
-        title={`${product.name} - ভিডিও প্রিভিউ`}
-        className="w-full max-w-full"
-      >
-        <VideoModalContent
-          videoUrl={product.videoUrl}
-          title={product.name}
-          isOpen={isVideoOpen}
-        />
-      </SideModal>
-    ) : (
-      <Modal
-        isOpen={isVideoOpen}
-        onClose={() => setIsVideoOpen(false)}
-        title={`${product.name} - ভিডিও প্রিভিউ`}
-        size="4xl lg:max-w-6xl"
-      >
-        <VideoModalContent
-          videoUrl={product.videoUrl}
-          title={product.name}
-          isOpen={isVideoOpen}
-        />
-      </Modal>
-    ));
-
-  // প্রধান মডাল
   return (
     <>
+      {/* প্রধান মডাল – মোবাইলে SideModal, ডেস্কটপে Modal */}
       {isMobile ? (
         <SideModal
           isOpen={true}
@@ -128,7 +93,22 @@ export default function ProductModal() {
           <div className="p-1 md:p-5">{content}</div>
         </Modal>
       )}
-      {videoModal}
+
+      {/* ভিডিও মডাল – সবসময় কেন্দ্রীয় Modal */}
+      {isVideoOpen && product.videoUrl && (
+        <Modal
+          isOpen={isVideoOpen}
+          onClose={() => setIsVideoOpen(false)}
+          title={`${product.name} - ভিডিও প্রিভিউ`}
+          size="4xl lg:max-w-6xl"
+        >
+          <VideoModalContent
+            videoUrl={product.videoUrl}
+            title={product.name}
+            isOpen={isVideoOpen}
+          />
+        </Modal>
+      )}
     </>
   );
 }

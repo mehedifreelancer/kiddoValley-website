@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   Play,
@@ -26,21 +26,23 @@ import { useGlobal } from "@/app/contexts/GlobalContext";
 interface ProductDetailsProps {
   product: Product;
   showIngInModal: boolean;
+  onVideoOpen?: () => void;
+  onVideoClose?: () => void;
 }
 
 export default function ProductDetails({
   product,
   showIngInModal,
+  onVideoOpen,
+  onVideoClose,
 }: ProductDetailsProps) {
   const { addToCart, openCart } = useGlobal();
 
-  // ===== থাম্বনেইল সোয়াইপারের জন্য রেফ (স্টেট নয়) =====
-  const thumbsSwiperRef = useRef<any>(null);
-
   const [quantity, setQuantity] = useState(1);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [thumbSwiper, setThumbSwiper] = useState<any>(null);
+  const mainSwiperRef = useRef<any>(null);
 
-  // ===== সব ইমেজ সংগ্রহ =====
   const allImages = useMemo(() => {
     const imgs: string[] = [];
     if (product?.thumbnailImage) imgs.push(product.thumbnailImage);
@@ -52,10 +54,8 @@ export default function ProductDetails({
     return imgs;
   }, [product]);
 
-  // ===== প্রাইমারি অ্যাট্রিবিউট =====
   const primaryAttributes = product?.attributeOrderByPriority || [];
 
-  // ===== ডিফল্ট ভেরিয়েন্ট =====
   const defaultVariant = useMemo(() => {
     if (!product?.variants || product.variants.length === 0) return null;
     return (
@@ -68,7 +68,6 @@ export default function ProductDetails({
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
   const currentVariant = selectedVariant || defaultVariant;
 
-  // ===== ফিল্টার স্টেট =====
   const [filters, setFilters] = useState<Record<string, string>>(() => {
     const defaultFilters: Record<string, string> = {};
     primaryAttributes.forEach((attr) => {
@@ -79,7 +78,6 @@ export default function ProductDetails({
     return defaultFilters;
   });
 
-  // ===== ডিসপ্লে ডেটা =====
   const displayPrice = currentVariant?.price ?? 0;
   const displayDiscount = currentVariant?.discount ?? 0;
   const displayInStock = currentVariant?.inStock || "out of stock";
@@ -106,12 +104,10 @@ export default function ProductDetails({
       "out of stock": "স্টক শেষ",
     }[displayInStock] || displayInStock;
 
-  // ===== ফিল্টার পরিবর্তন (মেমোয়াইজড) =====
   const handleFilterChange = useCallback(
     (key: string, value: string) => {
       const newFilters = { ...filters, [key]: value };
       setFilters(newFilters);
-
       const matched = product.variants.find((v) =>
         Object.entries(newFilters).every(([k, val]) => {
           if (!val) return true;
@@ -123,15 +119,14 @@ export default function ProductDetails({
         const idx = allImages.indexOf(
           matched.imgUrl || product.thumbnailImage || "",
         );
-        if (idx !== -1 && thumbsSwiperRef.current) {
-          thumbsSwiperRef.current.slideTo(idx);
+        if (idx !== -1 && mainSwiperRef.current) {
+          mainSwiperRef.current.slideTo(idx);
         }
       }
     },
     [filters, product, allImages],
   );
 
-  // ===== কার্টে যোগ (মেমোয়াইজড) =====
   const handleAddToCart = useCallback(() => {
     if (!currentVariant) return;
     const uniqueId = `${product.id}-${currentVariant.sku}`;
@@ -153,10 +148,34 @@ export default function ProductDetails({
     () => setQuantity((q) => Math.max(1, q - 1)),
     [],
   );
-  const handleVideoOpen = useCallback(() => setIsVideoModalOpen(true), []);
-  const handleVideoClose = useCallback(() => setIsVideoModalOpen(false), []);
 
-  // ===== শুধু ভ্যালুওয়ালা অ্যাট্রিবিউট =====
+  const handleVideoOpen = useCallback(() => {
+    setIsVideoModalOpen(true);
+    if (onVideoOpen) onVideoOpen();
+  }, [onVideoOpen]);
+
+  const handleVideoClose = useCallback(() => {
+    setIsVideoModalOpen(false);
+    if (onVideoClose) onVideoClose();
+  }, [onVideoClose]);
+
+  // যখন thumbSwiper সেট হয়, মেইন সোয়াইপারের thumbs আপডেট করো
+  useEffect(() => {
+    if (thumbSwiper && mainSwiperRef.current) {
+      // মেইন সোয়াইপারের thumbs প্রপটি আপডেট করো
+      mainSwiperRef.current.thumbs.swiper = thumbSwiper;
+      mainSwiperRef.current.thumbs.init();
+      mainSwiperRef.current.update();
+    }
+  }, [thumbSwiper]);
+
+  // মডাল খোলা থাকলে thumbSwiper প্রস্তুত না হলে অপেক্ষা করো (ঐচ্ছিক)
+  useEffect(() => {
+    if (showIngInModal && !thumbSwiper) {
+      // কিছু করো না, থাম্ব সেট হলে উপরের useEffect কাজ করবে
+    }
+  }, [showIngInModal, thumbSwiper]);
+
   const visibleAttributes = primaryAttributes.filter(
     (attr) => attr.values.length > 0,
   );
@@ -166,17 +185,20 @@ export default function ProductDetails({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
         <div className="w-full">
           <div className="relative aspect-[7/5] md:aspect-[5/5] lg:aspect-[5/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
-            {/* প্রধান সোয়াইপার */}
+            {/* মেইন সোয়াইপার – সবসময় রেন্ডার, থাম্বস রেফ দিয়ে আপডেট হবে */}
             <Swiper
+              onSwiper={(swiper) => (mainSwiperRef.current = swiper)}
               spaceBetween={10}
               navigation={{
                 prevEl: ".custom-swiper-button-prev",
                 nextEl: ".custom-swiper-button-next",
               }}
-              thumbs={{ swiper: thumbsSwiperRef.current }}
+              thumbs={{ swiper: thumbSwiper }} // এখানে thumbSwiper স্টেট পাস
               modules={[FreeMode, Navigation, Thumbs]}
               className="h-full w-full"
               autoplay={false}
+              observer={true}
+              observeParents={true}
             >
               {allImages.length > 0 ? (
                 allImages.map((img, idx) => (
@@ -205,7 +227,7 @@ export default function ProductDetails({
               )}
             </Swiper>
 
-            {/* কাস্টম নেভিগেশন বাটন */}
+            {/* নেভিগেশন বাটন */}
             <div className="absolute inset-0 pointer-events-none z-20">
               <button className="custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
                 <ChevronLeft size={18} />
@@ -231,14 +253,12 @@ export default function ProductDetails({
             </span>
           </div>
 
-          {/* থাম্বনেইল সোয়াইপার (রেফ দিয়ে) */}
+          {/* থাম্বনেইল সোয়াইপার */}
           {allImages.length > 1 && (
-            <div className="mt-3">
+            <div className="mt-1 md:mt-2">
               <Swiper
-                onSwiper={(swiper) => {
-                  thumbsSwiperRef.current = swiper;
-                }}
-                spaceBetween={8}
+                onSwiper={(swiper) => setThumbSwiper(swiper)}
+                spaceBetween={1}
                 slidesPerView={4}
                 freeMode={true}
                 watchSlidesProgress={true}
@@ -263,8 +283,8 @@ export default function ProductDetails({
           )}
         </div>
 
-        {/* ─── RIGHT: প্রোডাক্ট তথ্য ─── */}
-        <div className="space-y-6">
+        {/* ─── ডান পাশ ─── */}
+        <div className="space-y-3">
           <div>
             {!showIngInModal && (
               <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
@@ -272,25 +292,13 @@ export default function ProductDetails({
               </h1>
             )}
 
-            <div>
-              {/* ❗ এখানে হার্ডকোডেড টেক্সট আছে – আপনি চাইলে product.description দিয়ে প্রতিস্থাপন করতে পারেন */}
-              বহুকাল হইলো আমি একবার পালামৌ প্রদেশে গিয়াছিলাম, প্রত্যাগমন করিলে
-              পর সেই অঞ্চলের বৃত্তান্ত লিখিবার নিমিত্ত দুই-এক জন বন্ধুবান্ধব
-              আমাকে পুনঃপুন অনুরোধ করিতেন, আমি তখন তাঁহাদের উপহাস করিতাম। বহুকাল
-              হইলো আমি একবার পালামৌ প্রদেশে গিয়াছিলাম, প্রত্যাগমন করিলে পর সেই
-              অঞ্চলের বৃত্তান্ত লিখিবার নিমিত্ত দুই-এক জন বন্ধুবান্ধব আমাকে
-              পুনঃপুন অনুরোধ করিতেন, আমি তখন তাঁহাদের উপহাস করিতাম।
-            </div>
+            {product.variants && product.variants.length > 1 && (
+              <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                মোট {product.variants.length}টি ভেরিয়েন্ট
+              </p>
+            )}
           </div>
 
-          {/* বিবরণ */}
-          <div className="prose prose-stone dark:prose-invert max-w-none">
-            <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-              {product.description}
-            </p>
-          </div>
-
-          {/* ─── অ্যাট্রিবিউট ফিল্টার ─── */}
           {visibleAttributes.length > 0 && (
             <div className="space-y-3">
               {visibleAttributes.map((attr) => {
@@ -321,55 +329,52 @@ export default function ProductDetails({
             </div>
           )}
 
-          {/* দাম */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#E57373]">
-              ৳{discountedPrice.toFixed(2)}
-            </span>
-            {displayDiscount > 0 && (
-              <>
-                <del className="text-sm text-stone-400 dark:text-stone-500 line-through">
-                  ৳{displayPrice.toFixed(2)}
-                </del>
-                <span className="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
-                  {displayDiscount}% ছাড়
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* পরিমাণ */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
-              পরিমাণ:
-            </span>
-            <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
-              <button
-                onClick={handleDecrement}
-                className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
-              >
-                <ChevronDown
-                  size={18}
-                  className="text-stone-600 dark:text-stone-400"
-                />
-              </button>
-              <span className="w-12 text-center font-medium text-stone-800 dark:text-stone-200">
-                {quantity}
+          <div className="flex items-baseline justify-between  gap-2">
+            <div>
+              <span className="text-3xl font-bold text-[#E57373]">
+                ৳{discountedPrice.toFixed(2)}
               </span>
-              <button
-                onClick={handleIncrement}
-                className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
-              >
-                <ChevronUp
-                  size={18}
-                  className="text-stone-600 dark:text-stone-400"
-                />
-              </button>
+              {displayDiscount > 0 && (
+                <>
+                  <del className="text-sm text-stone-400 dark:text-stone-500 line-through">
+                    ৳{displayPrice.toFixed(2)}
+                  </del>
+                  <span className="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                    {displayDiscount}% ছাড়
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                পরিমাণ:
+              </span>
+              <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
+                <button
+                  onClick={handleDecrement}
+                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+                >
+                  <ChevronDown
+                    size={18}
+                    className="text-stone-600 dark:text-stone-400"
+                  />
+                </button>
+                <span className="w-12 text-center font-medium text-stone-800 dark:text-stone-200">
+                  {quantity}
+                </span>
+                <button
+                  onClick={handleIncrement}
+                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+                >
+                  <ChevronUp
+                    size={18}
+                    className="text-stone-600 dark:text-stone-400"
+                  />
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* অ্যাকশন বাটন */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <div className="flex flex-row sm:flex-row gap-3 pt-4">
             <Button
               variant="primary"
               size="md"
@@ -395,10 +400,20 @@ export default function ProductDetails({
               </Button>
             )}
           </div>
+
+          <div className="prose prose-stone dark:prose-invert max-w-none">
+            <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
+              আমরা বাংলায় ওয়েব ডেডলপমেন্ট নিয়ে কাজ করতে গিয়ে প্রথম যে সমস্যাটার
+              মুখোমুখি হই, সেটা হলো, বাংলা ডেমো টেক্সট। ইংরেজির জন্য lorem ipsum
+              তো আছে । বাংলার জন্য কি আছে? সেই ধারনা থেকেই বাংলা ডেমো টেক্সট
+              তৈরীর চেষ্টা। HTML এর প্রয়োজনীয় প্রায় সব ফরম্যাটেই বাংলা ডেমো
+              টেক্সট তুলে ধরা হয়েছে। আশা করছি, এরি ক্ষুদ্র প্রচেষ্টা আপনাদের
+              কাজে আসবে।
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* ─── ভিডিও মডাল ─── */}
       {isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
