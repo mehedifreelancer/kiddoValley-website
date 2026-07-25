@@ -244,7 +244,6 @@ export default function ProductDetails({
                 watchSlidesProgress={true}
                 modules={[FreeMode, Navigation, Thumbs]}
                 className="thumbs-swiper"
-                
               >
                 {allImages.map((img, idx) => (
                   <SwiperSlide key={idx}>
