@@ -149,15 +149,6 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
             className="w-full h-full"
           />
         </div>
-
-        {/* ভিডিওর ভেতরের কাস্টম টাইটেল */}
-        {title && isLoaded && (
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 pointer-events-none z-10">
-            <p className="text-white text-sm font-semibold truncate drop-shadow-md">
-              {title}
-            </p>
-          </div>
-        )}
       </div>
 
       {/* নিচের নতুন কাস্টম কন্ট্রোল প্যানেল */}
@@ -182,7 +173,7 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
 
             <button
               onClick={toggleMute}
-              className="text-gray-300  hover:text-white bg-gray-800 hover:bg-gray-700 p-2.5 rounded-lg transition-all active:scale-95 shadow-inner border border-gray-700"
+              className="text-gray-300  hover:text-white  p-1 rounded-lg transition-all active:scale-95 shadow-inner "
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
