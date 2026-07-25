@@ -25,16 +25,14 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
     const id = getYouTubeId(url);
     setVideoId(id);
 
-    // কম্পোনেন্ট ক্লোজ বা আনমাউন্ট হলে ভিডিও এবং ইন্টারভাল বন্ধ করার জন্য ক্লিনআপ
     return () => {
       if (timelineInterval.current) clearInterval(timelineInterval.current);
       if (playerRef.current) {
-        playerRef.current.destroy(); // আইফ্রেম ডেস্ট্রয় করে ব্যাকগ্রাউন্ড প্লে বন্ধ করা
+        playerRef.current.destroy();
       }
     };
   }, [url]);
 
-  // প্রোগ্রেস বার প্রতি সেকেন্ডে আপডেট করার জন্য টাইমার
   const startTimelineUpdate = () => {
     if (timelineInterval.current) clearInterval(timelineInterval.current);
 
@@ -58,7 +56,6 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
   };
 
   const onStateChange = (event: any) => {
-    // ১ = PLAYING, ২ = PAUSED, ০ = ENDED
     if (event.data === 1) {
       setIsPlaying(true);
       startTimelineUpdate();
@@ -88,7 +85,6 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
     }
   };
 
-  // সিক বার বা প্রোগ্রেস বার টেনে পরিবর্তন করার ফাংশন
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!playerRef.current) return;
     const newTime = parseFloat(e.target.value);
@@ -96,7 +92,6 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
     setCurrentTime(newTime);
   };
 
-  // সময়কে ০:০০ ফরম্যাটে দেখানোর ইউটিলিটি
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
@@ -112,8 +107,8 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
   }
 
   return (
-    <div className="w-full bg-black rounded-lg overflow-hidden border border-gray-800 shadow-xl">
-      {/* ভিডিও ডিসপ্লে সেকশন (১৬:৯ রেশিও লকড) */}
+    <div className="w-full bg-black rounded-sm overflow-hidden  shadow-md select-none">
+      {/* ভিডিও ডিসপ্লে এরিয়া */}
       <div className="relative aspect-video w-full overflow-hidden bg-black">
         {/* থাম্বনেইল ও লোডার */}
         {!isLoaded && (
@@ -129,10 +124,9 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
           </div>
         )}
 
-        {/* আল্ট্রা-ক্রপড ইউটিউব প্লেয়ার উইন্ডো */}
-        {/* top-[-18%] এবং h-[136%] এর ফলে ইউটিউবের আসল টাইটেল এবং নিচের লোগো এরিয়া পুরোপুরি ভ্যানিশ হয়ে যাবে */}
+        {/* মোবাইল ফ্রেম অপ্টিমাইজড প্লেয়ার উইন্ডো */}
         <div
-          className={`absolute top-[-18%] bottom-[-18%] left-[-1%] right-[-1%] w-[102%] h-[136%] pointer-events-none ${isLoaded ? "block" : "hidden"}`}
+          className={`absolute top-[-25%] bottom-[-25%] left-[-2%] right-[-2%] w-[104%] h-[150%] pointer-events-none ${isLoaded ? "block" : "hidden"}`}
         >
           <YouTube
             videoId={videoId}
@@ -141,7 +135,7 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
               height: "100%",
               playerVars: {
                 autoplay: 1,
-                mute: 1, // ব্রাউজার পলিসির জন্য ইনিশিয়াল মিউট করা বাধ্যতামুলক, পরে ইউজার আনমিউট করবে
+                mute: 1,
                 controls: 0,
                 rel: 0,
                 playsinline: 1,
@@ -156,18 +150,20 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
           />
         </div>
 
-        {/* ভিডিওর ভেতরের টাইটেল ওভারলে */}
+        {/* ভিডিওর ভেতরের কাস্টম টাইটেল */}
         {title && isLoaded && (
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-4 pointer-events-none z-10">
-            <p className="text-white text-sm font-medium truncate">{title}</p>
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 pointer-events-none z-10">
+            <p className="text-white text-sm font-semibold truncate drop-shadow-md">
+              {title}
+            </p>
           </div>
         )}
       </div>
 
-      {/* ভিডিও পোরশনের নিচে নতুন কাস্টম কন্ট্রোলার */}
+      {/* নিচের নতুন কাস্টম কন্ট্রোল প্যানেল */}
       {isLoaded && (
-        <div className="bg-gray-900 px-4 py-3 flex flex-col gap-2 select-none">
-          {/* প্রোগ্রেস বার (Timeline / Seek Bar) */}
+        <div className="bg-gray-200 dark:bg-gray-900 px-2 py-3 flex flex-col gap-2">
+          {/* প্রোগ্রেস বার (Time Seek) */}
           <div className="flex items-center gap-3 w-full">
             <span className="text-xs text-gray-400 font-mono min-w-[35px] text-right">
               {formatTime(currentTime)}
@@ -183,38 +179,34 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
             <span className="text-xs text-gray-400 font-mono min-w-[35px]">
               {formatTime(duration)}
             </span>
+
+            <button
+              onClick={toggleMute}
+              className="text-gray-300  hover:text-white bg-gray-800 hover:bg-gray-700 p-2.5 rounded-lg transition-all active:scale-95 shadow-inner border border-gray-700"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? (
+                <VolumeX size={18} className="text-rose-400" />
+              ) : (
+                <Volume2 size={18} />
+              )}
+            </button>
           </div>
 
-          {/* কন্ট্রোল বাটনসমূহ */}
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-4">
-              {/* প্লে এবং পজ টগল বাটন */}
-              <button
-                onClick={togglePlay}
-                className="text-white hover:text-rose-500 transition-colors p-1"
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <Pause size={22} className="fill-white" />
-                ) : (
-                  <Play size={22} className="fill-white" />
-                )}
-              </button>
-
-              {/* ভলিউম অন/অফ বাটন */}
-              <button
-                onClick={toggleMute}
-                className="text-white hover:text-rose-500 transition-colors p-1"
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />}
-              </button>
-            </div>
-
-            {/* ডানদিকের ব্র্যান্ডিং বা এক্সট্রা স্পেস */}
-            <div className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">
-              Custom Player
-            </div>
+          {/* কন্ট্রোলারের নিচের ৩-কলাম গ্রিড লেআউট */}
+          <div className="flex border-t border-gray-300 dark:border-gray-800  justify-center items-center mt-1">
+            {/* ২. মাঝখানে (Center): প্লে এবং পজ বাটন */}
+            <button
+              onClick={togglePlay}
+              className="mt-2 text-white hover:text-rose-500 bg-gray-800 hover:bg-gray-700 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md border border-gray-700"
+              title={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? (
+                <Pause size={18} className="fill-white text-white" />
+              ) : (
+                <Play size={18} className="fill-white text-white ml-0.5" />
+              )}
+            </button>
           </div>
         </div>
       )}

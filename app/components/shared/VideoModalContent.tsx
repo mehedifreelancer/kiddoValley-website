@@ -36,7 +36,7 @@ export default function VideoModalContent({
   }
 
   return (
-    <div className="p-2">
+    <div className="">
       <VideoPlayer url={videoUrl} title={title} />
     </div>
   );
