@@ -108,34 +108,34 @@ export default function CartSidebar() {
             </div>
 
             {/* Footer with Total and Checkout */}
+            <div className="flex justify-between items-center mb-1 p-2">
+              <span className="text-stone-600 dark:text-stone-400">মোট:</span>
+              <div className="text-right">
+                <span className="text-xl font-bold text-[#E57373]">
+                  ৳{cartTotal.toFixed(2)}
+                </span>
+                <p className="text-xs text-stone-400">(+ ডেলিভারি চার্জ)</p>
+              </div>
+            </div>
             {cart.length > 0 && (
-              <div className="p-2 border-t border-stone-200 dark:border-dark-border">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-stone-600 dark:text-stone-400">
-                    মোট:
-                  </span>
-                  <span className="text-xl font-bold text-[#E57373]">
-                    ৳{cartTotal.toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <Link href="/checkout" onClick={closeCart}>
-                    <Button variant="primary" size="lg" fullWidth>
-                      অর্ডার কনফার্ম করুন
-                    </Button>
-                  </Link>
-                  <Link href={"/checkout"}>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      fullWidth
-                      onClick={closeCart}
-                    >
-                      শপিং চালিয়ে যান
-                    </Button>
-                  </Link>
-                </div>
+              <div className="flex flex-row gap-1 p-3">
+                <Link href="/checkout" onClick={closeCart} className="flex-1">
+                  <Button className="w-full" variant="primary" size="md">
+                    অর্ডার কনফার্ম করুন
+                  </Button>
+                </Link>
+                <Link href="/" className="flex-1">
+                  {" "}
+                  {/* অথবা যে পেজে যেতে চান */}
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    size="md"
+                    onClick={closeCart}
+                  >
+                    শপিং চালিয়ে যান
+                  </Button>
+                </Link>
               </div>
             )}
           </motion.div>

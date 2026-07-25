@@ -206,45 +206,47 @@ export default function ProductCard({
         transition={{ duration: 0.3 }}
         className="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm hover:shadow-xl border border-stone-200/60 dark:border-dark-border/60 overflow-hidden transition-all duration-300 h-full flex flex-col mx-auto w-full"
       >
-        {/* Image Container */}
+        {/* Image Container – স্মুথ হোভার জুম */}
         <div className="relative flex-shrink-0 bg-gradient-to-br from-rose-50/50 to-purple-50/50 dark:from-dark-surface/80 dark:to-dark-surface/60">
           <Link
             href={`/products/${product.slug}`}
             className="block relative aspect-[4/3] overflow-hidden"
           >
-            {displayImage && displayImage !== "/placeholder.jpg" ? (
-              <Image
-                src={displayImage}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                unoptimized
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl text-stone-300 dark:text-stone-600">
-                  📖
-                </span>
-              </div>
-            )}
-
-            {displayDiscount > 0 && (
-              <div className="absolute top-3 left-3 z-10">
-                <span className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-bold rounded-lg shadow-md tracking-wide">
-                  -{displayDiscount}%
-                </span>
-              </div>
-            )}
-
-            <div className="absolute top-3 right-3 z-10">
-              <span
-                className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium shadow-sm backdrop-blur-sm ${stockStatusColor}`}
-              >
-                {stockLabel}
-              </span>
+            <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform backface-visibility-hidden">
+              {displayImage && displayImage !== "/placeholder.jpg" ? (
+                <Image
+                  src={displayImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  unoptimized
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-4xl text-stone-300 dark:text-stone-600">
+                    📖
+                  </span>
+                </div>
+              )}
             </div>
           </Link>
+
+          {/* Badges */}
+          {displayDiscount > 0 && (
+            <div className="absolute top-3 left-3 z-10">
+              <span className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-bold rounded-lg shadow-md tracking-wide">
+                -{displayDiscount}%
+              </span>
+            </div>
+          )}
+          <div className="absolute top-3 right-3 z-10">
+            <span
+              className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium shadow-sm backdrop-blur-sm ${stockStatusColor}`}
+            >
+              {stockLabel}
+            </span>
+          </div>
         </div>
 
         {/* Variant Section */}
@@ -297,7 +299,7 @@ export default function ProductCard({
               )}
             </div>
 
-            {/* ✅ Variant Badges – প্রাইমারি অ্যাট্রিবিউটের ভ্যালু অনুযায়ী, খালি থাকলে "No variant" */}
+            {/* Variant Badges */}
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               {primaryKey && (
                 <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">

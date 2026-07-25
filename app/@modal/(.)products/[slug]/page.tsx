@@ -101,7 +101,7 @@ export default function ProductModal() {
           isOpen={isVideoOpen}
           onClose={() => setIsVideoOpen(false)}
           title={`${product.name} - ভিডিও প্রিভিউ`}
-          size="4xl lg:max-w-6xl"
+          size="4xl"
         >
           <VideoModalContent
             videoUrl={product.videoUrl}
