@@ -413,7 +413,7 @@ export default function ProductDetails({
           isOpen={isVideoModalOpen}
           onClose={handleVideoClose}
           title={`${product.name} - ভিডিও প্রিভিউ`}
-          size="full"
+          size="4xl"
         >
           <VideoModalContent
             key={product.videoUrl}

@@ -43,7 +43,6 @@ export default function SideModal({
     }
   }, [isOpen]);
 
-  // ক্লিক আউটসাইড
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -71,7 +70,6 @@ export default function SideModal({
     };
   }, [isOpen, isAnimatingOut, disableOutsideClick]);
 
-  // Escape কী
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -88,7 +86,6 @@ export default function SideModal({
     };
   }, [isOpen, isAnimatingOut, disableOutsideClick]);
 
-  // ক্লিনআপ
   useEffect(() => {
     return () => {
       document.body.style.overflow = "unset";
@@ -111,7 +108,6 @@ export default function SideModal({
             onClick={handleCloseTrigger}
           />
 
-          {/* সাইড প্যানেল */}
           <motion.div
             ref={modalRef}
             initial={{ x: "100%" }}
@@ -125,51 +121,18 @@ export default function SideModal({
               ${className}
             `}
           >
-            {/* ===== এক্সাক্ট ব্যাকগ্রাউন্ড (লেআউটের মতো) ===== */}
+            {/* ===== গ্রেডিয়েন্ট + হালকা স্প্ল্যাশ (শুধু একটি) ===== */}
             <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated pointer-events-none">
-              {/* Center splash */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
-                  className="w-[800px] h-[800px] rounded-full blur-3xl"
+                  className="w-[400px] h-[400px] rounded-full blur-3xl"
                   style={{
-                    background: `radial-gradient(circle at center, 
-                      #D51B26 0%,
-                      #8859F8 20%,
-                      #1C08A9 40%,
-                      #36A43D 60%,
-                      #8859F8 70%,
-                      transparent 85%
-                    )`,
-                    opacity: 0.25,
-                  }}
-                />
-                <div
-                  className="absolute w-[400px] h-[400px] rounded-full blur-2xl"
-                  style={{
-                    background: `radial-gradient(circle at center, 
-                      #D51B26 0%,
-                      #8859F8 30%,
-                      #1C08A9 50%,
-                      transparent 80%
-                    )`,
+                    background: `radial-gradient(circle at center, #D51B26 0%, #8859F8 30%, #1C08A9 50%, transparent 80%)`,
                     opacity: 0.2,
                   }}
                 />
-                <div
-                  className="absolute w-[1100px] h-[1100px] rounded-full blur-[100px]"
-                  style={{
-                    background: `radial-gradient(circle at center, 
-                      #36A43D 0%,
-                      #1C08A9 20%,
-                      #8859F8 40%,
-                      #D51B26 60%,
-                      transparent 80%
-                    )`,
-                    opacity: 0.15,
-                  }}
-                />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/20 to-cream-200/20 dark:via-dark-bg/20 dark:to-dark-surface/20 pointer-events-none"></div>
             </div>
 
             {/* হেডার – স্বচ্ছ */}
@@ -177,7 +140,6 @@ export default function SideModal({
               <button
                 onClick={handleCloseTrigger}
                 className="p-2 rounded-lg hover:bg-stone-100/50 dark:hover:bg-dark-elevated/50 transition-colors"
-                aria-label="Go back"
               >
                 <ChevronLeft
                   size={24}
@@ -191,12 +153,12 @@ export default function SideModal({
               )}
             </div>
 
-            {/* কন্টেন্ট – স্ক্রোলযোগ্য */}
+            {/* কন্টেন্ট */}
             <div className="relative z-10 h-[calc(100vh-70px)] overflow-y-auto p-2">
               {children}
             </div>
 
-            {/* ফ্লোটিং ক্লোজ বাটন (নিচে) */}
+            {/* ফ্লোটিং ক্লোজ বাটন */}
             <button
               onClick={handleCloseTrigger}
               className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 
@@ -206,7 +168,6 @@ export default function SideModal({
                 flex items-center justify-center 
                 border border-stone-200/50 dark:border-white/20
                 hover:scale-105 active:scale-95 transition-transform duration-200"
-              aria-label="Close"
             >
               <ChevronLeft
                 size={32}
