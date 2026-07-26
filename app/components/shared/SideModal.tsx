@@ -12,6 +12,7 @@ interface SideModalProps {
   className?: string;
   children: ReactNode;
   disableOutsideClick?: boolean;
+  disableScrollLock?: boolean; // নতুন প্রপ
 }
 
 export default function SideModal({
@@ -21,6 +22,7 @@ export default function SideModal({
   className = "",
   children,
   disableOutsideClick = false,
+  disableScrollLock = false,
 }: SideModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -35,14 +37,11 @@ export default function SideModal({
   };
 
   useEffect(() => {
-    if (!isOpen && !isAnimatingOut) {
-      handleCloseTrigger();
-    }
-    if (isOpen) {
-      setIsAnimatingOut(false);
-    }
+    if (!isOpen && !isAnimatingOut) handleCloseTrigger();
+    if (isOpen) setIsAnimatingOut(false);
   }, [isOpen]);
 
+  // ক্লিক আউটসাইড
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -55,42 +54,35 @@ export default function SideModal({
 
     if (isOpen && !isAnimatingOut && !disableOutsideClick) {
       document.addEventListener("mousedown", handleClickOutside);
+    }
+    if (isOpen && !disableScrollLock) {
       document.body.style.overflow = "hidden";
-    } else {
-      if (isOpen && !isAnimatingOut) {
-        document.body.style.overflow = "hidden";
-      }
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      if (!isOpen && !isAnimatingOut) {
+      if (!disableScrollLock && !isOpen) {
         document.body.style.overflow = "unset";
       }
     };
-  }, [isOpen, isAnimatingOut, disableOutsideClick]);
+  }, [isOpen, isAnimatingOut, disableOutsideClick, disableScrollLock]);
 
+  // Escape কী
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        handleCloseTrigger();
-      }
+      if (event.key === "Escape") handleCloseTrigger();
     };
-
     if (isOpen && !isAnimatingOut && !disableOutsideClick) {
       document.addEventListener("keydown", handleEscape);
     }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, isAnimatingOut, disableOutsideClick]);
 
   useEffect(() => {
     return () => {
-      document.body.style.overflow = "unset";
+      if (!disableScrollLock) document.body.style.overflow = "unset";
     };
-  }, []);
+  }, [disableScrollLock]);
 
   const shouldRender = isOpen && !isAnimatingOut;
 
@@ -99,13 +91,11 @@ export default function SideModal({
       {shouldRender && (
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* ব্যাকড্রপ */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={handleCloseTrigger}
+          <div
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              disableOutsideClick ? "pointer-events-none" : ""
+            }`}
+            onClick={disableOutsideClick ? undefined : handleCloseTrigger}
           />
 
           <motion.div
@@ -121,7 +111,7 @@ export default function SideModal({
               ${className}
             `}
           >
-            {/* ===== গ্রেডিয়েন্ট + হালকা স্প্ল্যাশ (শুধু একটি) ===== */}
+            {/* ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট */}
             <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated pointer-events-none">
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div
@@ -132,10 +122,10 @@ export default function SideModal({
                   }}
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/20 to-cream-200/20 dark:via-dark-bg/20 dark:to-dark-surface/20 pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/20 to-cream-200/20 dark:via-dark-bg/20 dark:to-dark-surface/20 pointer-events-none" />
             </div>
 
-            {/* হেডার – স্বচ্ছ */}
+            {/* হেডার */}
             <div className="relative z-10 flex items-center py-2 border-b border-stone-200/50 dark:border-dark-border/50 bg-white/30 dark:bg-black/10 backdrop-blur-sm">
               <button
                 onClick={handleCloseTrigger}

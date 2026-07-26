@@ -74,13 +74,13 @@ export default function ProductModal() {
 
   return (
     <>
-      {/* প্রধান মডাল – মোবাইলে SideModal, ডেস্কটপে Modal */}
+      {/* প্রধান মডাল – ভিডিও খোলা থাকলে disableOutsideClick সক্রিয় */}
       {isMobile ? (
         <SideModal
           isOpen={true}
           onClose={() => router.back()}
           title={product.name}
-          disableOutsideClick={isVideoOpen} // ভিডিও খোলা থাকলে SideModal বাইরের ক্লিকে বন্ধ হবে না
+          disableOutsideClick={isVideoOpen}
         >
           <div className="p-1 md:p-3">{content}</div>
         </SideModal>
@@ -90,18 +90,19 @@ export default function ProductModal() {
           onClose={() => router.back()}
           title={product.name}
           size="4xl"
+          disableOutsideClick={isVideoOpen}
         >
           <div className="p-1 md:p-5">{content}</div>
         </Modal>
       )}
 
-      {/* ভিডিও মডাল – সবসময় রেন্ডার (যদি ভিডিও URL থাকে) */}
-      {product.videoUrl && (
+      {/* ভিডিও মডাল – সবসময় কেন্দ্রীয় Modal */}
+      {isVideoOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoOpen}
           onClose={() => setIsVideoOpen(false)}
           title={`${product.name} - ভিডিও প্রিভিউ`}
-          size="4xl"
+          size="xl"
         >
           <VideoModalContent
             videoUrl={product.videoUrl}

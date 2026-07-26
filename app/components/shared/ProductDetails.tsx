@@ -43,6 +43,23 @@ export default function ProductDetails({
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
 
+  // ===== ইউটিউব থাম্বনেইল ইউআরএল বের করার ফাংশন =====
+  const getYouTubeThumbnail = (url: string) => {
+    if (!url) return null;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://img.youtube.com/vi/${match[2]}/hqdefault.jpg`;
+    }
+    return null;
+  };
+
+  const videoThumbnail = product.videoUrl
+    ? getYouTubeThumbnail(product.videoUrl)
+    : null;
+
+  // ===== সব ইমেজ সংগ্রহ (শুধু ইমেজ, ভিডিও নয়) =====
   const allImages = useMemo(() => {
     const imgs: string[] = [];
     if (product?.thumbnailImage) imgs.push(product.thumbnailImage);
@@ -53,6 +70,44 @@ export default function ProductDetails({
     }
     return imgs;
   }, [product]);
+
+  // ===== মেইন স্লাইডারের জন্য আইটেম লিস্ট (ইমেজ + ভিডিও) =====
+  const mainSlides = useMemo(() => {
+    const slides: Array<
+      | { type: "image"; url: string }
+      | { type: "video"; url: string; thumbnail: string }
+    > = [];
+    allImages.forEach((img) => {
+      slides.push({ type: "image", url: img });
+    });
+    if (product.videoUrl && videoThumbnail) {
+      slides.push({
+        type: "video",
+        url: product.videoUrl,
+        thumbnail: videoThumbnail,
+      });
+    }
+    return slides;
+  }, [allImages, product.videoUrl, videoThumbnail]);
+
+  // ===== থাম্বনেইল স্লাইডারের জন্য আইটেম লিস্ট (শুধু থাম্ব) =====
+  const thumbSlides = useMemo(() => {
+    const slides: Array<
+      | { type: "image"; url: string }
+      | { type: "video"; url: string; thumbnail: string }
+    > = [];
+    allImages.forEach((img) => {
+      slides.push({ type: "image", url: img });
+    });
+    if (product.videoUrl && videoThumbnail) {
+      slides.push({
+        type: "video",
+        url: product.videoUrl,
+        thumbnail: videoThumbnail,
+      });
+    }
+    return slides;
+  }, [allImages, product.videoUrl, videoThumbnail]);
 
   const primaryAttributes = product?.attributeOrderByPriority || [];
 
@@ -116,15 +171,17 @@ export default function ProductDetails({
       );
       if (matched) {
         setSelectedVariant(matched);
-        const idx = allImages.indexOf(
-          matched.imgUrl || product.thumbnailImage || "",
+        const idx = mainSlides.findIndex(
+          (slide) =>
+            slide.type === "image" &&
+            slide.url === (matched.imgUrl || product.thumbnailImage || ""),
         );
         if (idx !== -1 && mainSwiperRef.current) {
           mainSwiperRef.current.slideTo(idx);
         }
       }
     },
-    [filters, product, allImages],
+    [filters, product, mainSlides],
   );
 
   const handleAddToCart = useCallback(() => {
@@ -162,7 +219,6 @@ export default function ProductDetails({
   // যখন thumbSwiper সেট হয়, মেইন সোয়াইপারের thumbs আপডেট করো
   useEffect(() => {
     if (thumbSwiper && mainSwiperRef.current) {
-      // মেইন সোয়াইপারের thumbs প্রপটি আপডেট করো
       mainSwiperRef.current.thumbs.swiper = thumbSwiper;
       mainSwiperRef.current.thumbs.init();
       mainSwiperRef.current.update();
@@ -193,38 +249,52 @@ export default function ProductDetails({
                 prevEl: ".custom-swiper-button-prev",
                 nextEl: ".custom-swiper-button-next",
               }}
-              thumbs={{ swiper: thumbSwiper }} // এখানে thumbSwiper স্টেট পাস
+              thumbs={{ swiper: thumbSwiper }}
               modules={[FreeMode, Navigation, Thumbs]}
               className="h-full w-full"
               autoplay={false}
               observer={true}
               observeParents={true}
             >
-              {allImages.length > 0 ? (
-                allImages.map((img, idx) => (
-                  <SwiperSlide key={idx}>
-                    <div className="relative w-full h-full">
+              {mainSlides.map((slide, idx) => (
+                <SwiperSlide key={idx}>
+                  <div className="relative w-full h-full">
+                    {slide.type === "image" ? (
                       <Image
-                        src={img}
+                        src={slide.url}
                         alt={`${product.name} - ${idx + 1}`}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         unoptimized
                       />
-                    </div>
-                  </SwiperSlide>
-                ))
-              ) : (
-                <SwiperSlide>
-                  <div className="flex items-center justify-center w-full h-full">
-                    <BookOpen
-                      size={64}
-                      className="text-stone-300 dark:text-stone-600"
-                    />
+                    ) : (
+                      <>
+                        <Image
+                          src={slide.thumbnail}
+                          alt={`Video - ${product.name}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          unoptimized
+                        />
+                        {/* প্লে বাটন ওভারলে */}
+                        <div
+                          className="absolute inset-0 flex items-center justify-center cursor-pointer group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVideoOpen();
+                          }}
+                        >
+                          <div className="w-20 h-20 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center text-black dark:text-white transition-all group-hover:scale-110">
+                            <Play size={32} className="fill-current ml-1" />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </SwiperSlide>
-              )}
+              ))}
             </Swiper>
 
             {/* নেভিগেশন বাটন */}
@@ -254,7 +324,7 @@ export default function ProductDetails({
           </div>
 
           {/* থাম্বনেইল সোয়াইপার */}
-          {allImages.length > 1 && (
+          {thumbSlides.length > 1 && (
             <div className="mt-1 md:mt-2">
               <Swiper
                 onSwiper={(swiper) => setThumbSwiper(swiper)}
@@ -265,16 +335,39 @@ export default function ProductDetails({
                 modules={[FreeMode, Navigation, Thumbs]}
                 className="thumbs-swiper"
               >
-                {allImages.map((img, idx) => (
+                {thumbSlides.map((slide, idx) => (
                   <SwiperSlide key={idx}>
                     <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden border-2 border-transparent hover:border-rose-500 transition-colors cursor-pointer">
-                      <Image
-                        src={img}
-                        alt={`Thumbnail ${idx + 1}`}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
+                      {slide.type === "image" ? (
+                        <Image
+                          src={slide.url}
+                          alt={`Thumbnail ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <>
+                          <Image
+                            src={slide.thumbnail}
+                            alt={`Video Thumbnail`}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                          <div
+                            className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVideoOpen();
+                            }}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center text-black dark:text-white">
+                              <Play size={14} className="fill-current ml-0.5" />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </SwiperSlide>
                 ))}
