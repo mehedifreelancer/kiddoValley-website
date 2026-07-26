@@ -448,7 +448,7 @@ export default function ProductDetails({
               )}
             </div>
             {/* পরিমাণ সিলেক্টর – এখন চালু */}
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                 পরিমাণ:
               </span>
@@ -477,7 +477,7 @@ export default function ProductDetails({
                   />
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex flex-row gap-3 pt-2">
