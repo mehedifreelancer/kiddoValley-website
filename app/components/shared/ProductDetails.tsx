@@ -43,7 +43,7 @@ export default function ProductDetails({
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
 
-  // ===== ইউটিউব থাম্বনেইল ইউআরএল বের করার ফাংশন =====
+  // ===== ইউটিউব থাম্বনেইল ফাংশন =====
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
     const regExp =
@@ -59,7 +59,7 @@ export default function ProductDetails({
     ? getYouTubeThumbnail(product.videoUrl)
     : null;
 
-  // ===== সব ইমেজ সংগ্রহ (শুধু ইমেজ, ভিডিও নয়) =====
+  // ===== সব ইমেজ =====
   const allImages = useMemo(() => {
     const imgs: string[] = [];
     if (product?.thumbnailImage) imgs.push(product.thumbnailImage);
@@ -71,7 +71,7 @@ export default function ProductDetails({
     return imgs;
   }, [product]);
 
-  // ===== মেইন স্লাইডারের জন্য আইটেম লিস্ট (ইমেজ + ভিডিও) =====
+  // ===== মেইন স্লাইডার আইটেম =====
   const mainSlides = useMemo(() => {
     const slides: Array<
       | { type: "image"; url: string }
@@ -90,7 +90,7 @@ export default function ProductDetails({
     return slides;
   }, [allImages, product.videoUrl, videoThumbnail]);
 
-  // ===== থাম্বনেইল স্লাইডারের জন্য আইটেম লিস্ট (শুধু থাম্ব) =====
+  // ===== থাম্বনেইল =====
   const thumbSlides = useMemo(() => {
     const slides: Array<
       | { type: "image"; url: string }
@@ -109,6 +109,7 @@ export default function ProductDetails({
     return slides;
   }, [allImages, product.videoUrl, videoThumbnail]);
 
+  // ===== অ্যাট্রিবিউট =====
   const primaryAttributes = product?.attributeOrderByPriority || [];
 
   const defaultVariant = useMemo(() => {
@@ -216,7 +217,6 @@ export default function ProductDetails({
     if (onVideoClose) onVideoClose();
   }, [onVideoClose]);
 
-  // যখন thumbSwiper সেট হয়, মেইন সোয়াইপারের thumbs আপডেট করো
   useEffect(() => {
     if (thumbSwiper && mainSwiperRef.current) {
       mainSwiperRef.current.thumbs.swiper = thumbSwiper;
@@ -225,23 +225,16 @@ export default function ProductDetails({
     }
   }, [thumbSwiper]);
 
-  // মডাল খোলা থাকলে thumbSwiper প্রস্তুত না হলে অপেক্ষা করো (ঐচ্ছিক)
-  useEffect(() => {
-    if (showIngInModal && !thumbSwiper) {
-      // কিছু করো না, থাম্ব সেট হলে উপরের useEffect কাজ করবে
-    }
-  }, [showIngInModal, thumbSwiper]);
-
   const visibleAttributes = primaryAttributes.filter(
     (attr) => attr.values.length > 0,
   );
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2  md:gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 md:gap-8 lg:gap-12">
+        {/* বাম – ইমেজ স্লাইডার */}
         <div className="w-full">
           <div className="relative aspect-[7/5] md:aspect-[5/5] lg:aspect-[5/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
-            {/* মেইন সোয়াইপার – সবসময় রেন্ডার, থাম্বস রেফ দিয়ে আপডেট হবে */}
             <Swiper
               onSwiper={(swiper) => (mainSwiperRef.current = swiper)}
               spaceBetween={10}
@@ -278,7 +271,6 @@ export default function ProductDetails({
                           sizes="(max-width: 768px) 100vw, 50vw"
                           unoptimized
                         />
-                        {/* প্লে বাটন ওভারলে */}
                         <div
                           className="absolute inset-0 flex items-center justify-center cursor-pointer group"
                           onClick={(e) => {
@@ -323,7 +315,7 @@ export default function ProductDetails({
             </span>
           </div>
 
-          {/* থাম্বনেইল সোয়াইপার */}
+          {/* থাম্বনেইল */}
           {thumbSlides.length > 1 && (
             <div className="mt-1 md:mt-2">
               <Swiper
@@ -376,7 +368,7 @@ export default function ProductDetails({
           )}
         </div>
 
-        {/* ─── ডান পাশ ─── */}
+        {/* ডান – প্রোডাক্ট তথ্য */}
         <div className="space-y-3">
           <div>
             {!showIngInModal && (
@@ -416,7 +408,7 @@ export default function ProductDetails({
             </div>
           )}
 
-          <div className="flex flex-col justify-between  gap-2">
+          <div className="flex flex-col justify-between gap-2">
             <div>
               <span className="text-3xl font-bold text-[#E57373]">
                 ৳{discountedPrice.toFixed(2)}
@@ -461,7 +453,8 @@ export default function ProductDetails({
               </div>
             </div>
           </div>
-          <div className="flex flex-row sm:flex-row gap-3 pt-4">
+
+          <div className="flex flex-row gap-3 pt-4">
             <Button
               variant="primary"
               size="md"
@@ -490,28 +483,25 @@ export default function ProductDetails({
 
           <div className="prose prose-stone dark:prose-invert max-w-none mt-5">
             <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-              আমরা বাংলায় ওয়েব ডেডলপমেন্ট নিয়ে কাজ করতে গিয়ে প্রথম যে সমস্যাটার
-              মুখোমুখি হই, সেটা হলো, বাংলা ডেমো টেক্সট। ইংরেজির জন্য lorem ipsum
-              তো আছে । বাংলার জন্য কি আছে? সেই ধারনা থেকেই বাংলা ডেমো টেক্সট
-              তৈরীর চেষ্টা। HTML এর প্রয়োজনীয় প্রায় সব ফরম্যাটেই বাংলা ডেমো
-              টেক্সট তুলে ধরা হয়েছে। আশা করছি, এরি ক্ষুদ্র প্রচেষ্টা আপনাদের
-              কাজে আসবে।
+              {product.description || `${product.name} – একটি চমৎকার বই।`}
             </p>
           </div>
         </div>
       </div>
 
-      {isVideoModalOpen && product.videoUrl && (
+      {/* ===== ভিডিও মডাল – শুধু ডিটেইল পেজে (showIngInModal false) ===== */}
+      {!showIngInModal && isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
           onClose={handleVideoClose}
           title={`${product.name} - ভিডিও প্রিভিউ`}
           size="4xl"
+          disableScrollLock={true}
         >
           <VideoModalContent
-            key={product.videoUrl}
             videoUrl={product.videoUrl}
             title={product.name}
+            isOpen={isVideoModalOpen}
           />
         </Modal>
       )}
