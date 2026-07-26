@@ -1,4 +1,3 @@
-// components/shared/Modal.tsx
 "use client";
 
 import { useEffect, useRef, ReactNode } from "react";
@@ -12,7 +11,7 @@ interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "4xl" | "5xl" | "full" | "fit";
   children: ReactNode;
   disableOutsideClick?: boolean;
-  disableScrollLock?: boolean; // নতুন প্রপ
+  disableScrollLock?: boolean;
 }
 
 export default function Modal({
@@ -26,7 +25,21 @@ export default function Modal({
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // স্ক্রল লক – disableScrollLock true হলে বাইপাস
+  // ✅ স্ক্রল লক – এখন ক্লিনআপ সবসময় রিলিজ করে
+  useEffect(() => {
+    if (isOpen && !disableScrollLock) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      if (!disableScrollLock) {
+        document.body.style.overflow = "unset";
+      }
+    };
+  }, [isOpen, disableScrollLock]);
+
+  // ক্লিক আউটসাইড
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -40,18 +53,12 @@ export default function Modal({
     if (isOpen && !disableOutsideClick) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    if (isOpen && !disableScrollLock) {
-      document.body.style.overflow = "hidden";
-    }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      if (!disableScrollLock && !isOpen) {
-        document.body.style.overflow = "unset";
-      }
     };
-  }, [isOpen, onClose, disableOutsideClick, disableScrollLock]);
+  }, [isOpen, onClose, disableOutsideClick]);
 
+  // Escape কী
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -78,7 +85,7 @@ export default function Modal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* ব্যাকড্রপ – disableOutsideClick true হলে pointer-events-none */}
+          {/* ব্যাকড্রপ */}
           <div
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${
               disableOutsideClick ? "pointer-events-none" : ""
