@@ -10,12 +10,14 @@ import VideoModalContent from "@/app/components/shared/VideoModalContent";
 import ProductDetails from "@/app/components/shared/ProductDetails";
 import { getProductBySlug } from "@/app/products/product.service";
 import { useDeviceDetect } from "@/app/hooks/useDeviceDetect";
+import { useGlobal } from "@/app/contexts/GlobalContext"; // ✅ ইমপোর্ট
 
 export default function ProductModal() {
   const router = useRouter();
   const { slug } = useParams<{ slug: string }>();
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const { isMobile } = useDeviceDetect(768);
+  const { isCartOpen } = useGlobal(); // ✅ কার্ট স্টেট নিন
 
   const {
     data: product,
@@ -72,15 +74,18 @@ export default function ProductModal() {
     />
   );
 
+  // ✅ ক্লোজ ডিজেবল করার শর্ত – ভিডিও ওপেন অথবা কার্ট ওপেন
+  const shouldDisableOutsideClick = isVideoOpen || isCartOpen;
+
   return (
     <>
-      {/* প্রধান মডাল – ভিডিও খোলা থাকলে disableOutsideClick সক্রিয় */}
+      {/* ডিটেইল মডাল – ভিডিও বা কার্ট খোলা থাকলে বাইরের ক্লিক নিষ্ক্রিয় */}
       {isMobile ? (
         <SideModal
           isOpen={true}
           onClose={() => router.back()}
           title={product.name}
-          disableOutsideClick={isVideoOpen}
+          disableOutsideClick={shouldDisableOutsideClick}
         >
           <div className="p-1 md:p-3">{content}</div>
         </SideModal>
@@ -90,13 +95,13 @@ export default function ProductModal() {
           onClose={() => router.back()}
           title={product.name}
           size="4xl"
-          disableOutsideClick={isVideoOpen}
+          disableOutsideClick={shouldDisableOutsideClick}
         >
           <div className="p-1 md:p-5">{content}</div>
         </Modal>
       )}
 
-      {/* ভিডিও মডাল – সবসময় কেন্দ্রীয় Modal */}
+      {/* ভিডিও মডাল – ওভারলে */}
       {isVideoOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoOpen}

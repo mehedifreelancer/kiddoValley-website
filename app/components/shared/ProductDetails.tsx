@@ -45,8 +45,6 @@ export default function ProductDetails({
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
 
-  
-
   // ===== ইউটিউব থাম্বনেইল ফাংশন =====
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
@@ -128,6 +126,14 @@ export default function ProductDetails({
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
   const currentVariant = selectedVariant || defaultVariant;
 
+  // ===== প্রাইমারি কী ও ভেরিয়েন্ট লেবেল (কার্টের জন্য) =====
+  const primaryKey = product.attributeOrderByPriority?.[0]?.key || null;
+  const variantLabel = useMemo(() => {
+    if (!currentVariant || !primaryKey) return "";
+    const value = currentVariant.attributes?.[primaryKey];
+    return value ? String(value) : "";
+  }, [currentVariant, primaryKey]);
+
   const [filters, setFilters] = useState<Record<string, string>>(() => {
     const defaultFilters: Record<string, string> = {};
     primaryAttributes.forEach((attr) => {
@@ -189,21 +195,34 @@ export default function ProductDetails({
     [filters, product, mainSlides],
   );
 
+  // ===== কার্টে যোগ – ভেরিয়েন্ট লেবেল সহ =====
   const handleAddToCart = useCallback(() => {
     if (!currentVariant) return;
     const uniqueId = `${product.id}-${currentVariant.sku}`;
+    const displayName = variantLabel
+      ? `${product.name} (${variantLabel})`
+      : product.name;
+
     addToCart({
       id: uniqueId,
-      name: product.name,
+      name: displayName,
       price: displayPrice,
       imageUrl:
         currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
       sku: currentVariant.sku,
       variant: currentVariant,
-      quantity: 1,
+      quantity: quantity, // ← পরিমাণ ব্যবহার করছি
     });
     openCart();
-  }, [currentVariant, product, displayPrice, addToCart, openCart]);
+  }, [
+    currentVariant,
+    product,
+    displayPrice,
+    addToCart,
+    openCart,
+    variantLabel,
+    quantity,
+  ]);
 
   const handleIncrement = useCallback(() => setQuantity((q) => q + 1), []);
   const handleDecrement = useCallback(
@@ -428,7 +447,8 @@ export default function ProductDetails({
                 </>
               )}
             </div>
-            {/* <div className="flex items-center gap-4">
+            {/* পরিমাণ সিলেক্টর – এখন চালু */}
+            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                 পরিমাণ:
               </span>
@@ -457,7 +477,7 @@ export default function ProductDetails({
                   />
                 </button>
               </div>
-            </div> */}
+            </div>
           </div>
 
           <div className="flex flex-row gap-3 pt-2">
