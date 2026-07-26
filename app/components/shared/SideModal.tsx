@@ -149,21 +149,21 @@ export default function SideModal({
             </div>
 
             {/* ফ্লোটিং ক্লোজ বাটন */}
-            <button
+            {/* <button
               onClick={handleCloseTrigger}
-              className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 
                 bg-white/90 dark:bg-black/60 backdrop-blur-md 
                 text-stone-800 dark:text-white 
-                w-14 h-14 rounded-full shadow-2xl 
+                w-10 h-10 rounded-full shadow-2xl 
                 flex items-center justify-center 
                 border border-stone-200/50 dark:border-white/20
                 hover:scale-105 active:scale-95 transition-transform duration-200"
             >
               <ChevronLeft
-                size={32}
+                size={20}
                 className="text-stone-800 dark:text-white"
               />
-            </button>
+            </button> */}
           </motion.div>
         </div>
       )}

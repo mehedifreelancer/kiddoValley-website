@@ -285,7 +285,7 @@ export default function ProductCard({
 
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-xl font-bold text-rose-600 dark:text-rose-400">
-                ৳{discountedPrice.toFixed(2)}
+                ৳ {discountedPrice.toFixed(2)}
               </span>
               {displayDiscount > 0 && (
                 <>

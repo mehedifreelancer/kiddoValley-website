@@ -10,6 +10,8 @@ import {
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs } from "swiper/modules";
@@ -42,6 +44,8 @@ export default function ProductDetails({
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
+
+  
 
   // ===== ইউটিউব থাম্বনেইল ফাংশন =====
   const getYouTubeThumbnail = (url: string) => {
@@ -278,8 +282,8 @@ export default function ProductDetails({
                             handleVideoOpen();
                           }}
                         >
-                          <div className="w-20 h-20 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center text-black dark:text-white transition-all group-hover:scale-110">
-                            <Play size={32} className="fill-current ml-1" />
+                          <div className="w-10 h-10 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center text-black dark:text-white transition-all group-hover:scale-110">
+                            <Play size={14} className="fill-current ml-1" />
                           </div>
                         </div>
                       </>
@@ -291,11 +295,11 @@ export default function ProductDetails({
 
             {/* নেভিগেশন বাটন */}
             <div className="absolute inset-0 pointer-events-none z-20">
-              <button className="custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
-                <ChevronLeft size={18} />
+              <button className="custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+                <ChevronLeft size={15} />
               </button>
-              <button className="custom-swiper-button-next absolute right-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
-                <ChevronRight size={18} />
+              <button className="custom-swiper-button-next absolute right-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+                <ChevronRight size={15} />
               </button>
             </div>
 
@@ -306,11 +310,11 @@ export default function ProductDetails({
               </span>
             )}
             <span
-              className={`absolute top-4 right-4 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
+              className={`absolute top-4 right-4 px-2 lg:px-3 py-0.5 lg:py-1  rounded-md lg:rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
             >
               {stockLabel}
             </span>
-            <span className="absolute bottom-4 left-4 px-3 py-1.5 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border z-10">
+            <span className="absolute bottom-1 left-1 px-3   lg:px-3 py-1 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-xs lg:text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border z-10">
               {product.category?.name || "ক্যাটাগরি"}
             </span>
           </div>
@@ -354,8 +358,8 @@ export default function ProductDetails({
                               handleVideoOpen();
                             }}
                           >
-                            <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center text-black dark:text-white">
-                              <Play size={14} className="fill-current ml-0.5" />
+                            <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center text-black dark:text-white">
+                              <Play size={10} className="fill-current ml-0.5" />
                             </div>
                           </div>
                         </>
@@ -372,7 +376,7 @@ export default function ProductDetails({
         <div className="space-y-3">
           <div>
             {!showIngInModal && (
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100 mb-2">
+              <h1 className="mt-3 text-2xl lg:text-3xl md:text-4xl font-bold text-stone-800 dark:text-stone-100">
                 {product.name}
               </h1>
             )}
@@ -392,7 +396,7 @@ export default function ProductDetails({
                         <button
                           key={val}
                           onClick={() => handleFilterChange(attr.key, val)}
-                          className={`px-3 py-1 text-sm rounded-full border transition-all ${
+                          className={`px-2 lg:px-3 lg:py-1 text-xs lg:text-sm rounded-full border transition-all ${
                             currentValue === val
                               ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700"
                               : "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200"
@@ -408,9 +412,9 @@ export default function ProductDetails({
             </div>
           )}
 
-          <div className="flex flex-col justify-between gap-2">
+          <div className="flex flex-col justify-between gap-1">
             <div>
-              <span className="text-3xl font-bold text-[#E57373]">
+              <span className="text-2xl md:text-3xl font-bold text-[#E57373]">
                 ৳{discountedPrice.toFixed(2)}
               </span>
               {displayDiscount > 0 && (
@@ -424,16 +428,17 @@ export default function ProductDetails({
                 </>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                 পরিমাণ:
               </span>
-              <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
+              <div className=" flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
                 <button
                   onClick={handleDecrement}
-                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors w-fu"
+                  aria-label="Decrease quantity"
                 >
-                  <ChevronDown
+                  <Minus
                     size={18}
                     className="text-stone-600 dark:text-stone-400"
                   />
@@ -444,20 +449,21 @@ export default function ProductDetails({
                 <button
                   onClick={handleIncrement}
                   className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
+                  aria-label="Increase quantity"
                 >
-                  <ChevronUp
+                  <Plus
                     size={18}
                     className="text-stone-600 dark:text-stone-400"
                   />
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
 
-          <div className="flex flex-row gap-3 pt-4">
+          <div className="flex flex-row gap-3 pt-2">
             <Button
               variant="primary"
-              size="md"
+              size="sm"
               icon={<ShoppingCart size={18} />}
               onClick={handleAddToCart}
               disabled={displayInStock === "out of stock"}
@@ -471,7 +477,7 @@ export default function ProductDetails({
             {product.videoUrl && (
               <Button
                 variant="secondary"
-                size="md"
+                size="sm"
                 icon={<Play size={18} />}
                 onClick={handleVideoOpen}
                 className="flex-1"

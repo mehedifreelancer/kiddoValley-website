@@ -142,7 +142,7 @@ export default function Modal({
                 )}
                 <button
                   onClick={onClose}
-                  className={`p-2 rounded-lg hover:bg-stone-100/50 dark:hover:bg-dark-elevated/50 transition-colors ${!title ? "ml-auto" : ""}`}
+                  className={`cursor-pointer p-2 rounded-lg hover:bg-stone-100/50 dark:hover:bg-dark-elevated/50 transition-colors ${!title ? "ml-auto" : ""}`}
                 >
                   <X size={20} className="text-stone-600 dark:text-stone-400" />
                 </button>

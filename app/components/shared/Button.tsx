@@ -39,7 +39,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={` cursor-pointer
+      className={` cursor-pointer!
         ${variantClass}
         ${sizeClass}
         ${widthClass}

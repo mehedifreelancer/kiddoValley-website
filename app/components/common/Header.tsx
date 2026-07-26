@@ -126,7 +126,7 @@ export default function Header() {
               {/* Theme Toggle - FIXED! */}
               <button
                 onClick={toggleTheme}
-                className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 cursor-pointer"
                 aria-label="Toggle theme"
               >
                 {getThemeIcon()}
@@ -143,7 +143,7 @@ export default function Header() {
                 />
               </Link>
 
-              <Link
+              {/* <Link
                 href="/account"
                 className="hidden sm:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Account"
@@ -152,7 +152,7 @@ export default function Header() {
                   size={16}
                   className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
                 />
-              </Link>
+              </Link> */}
 
               {/* Cart Button */}
               <button
@@ -162,7 +162,7 @@ export default function Header() {
               >
                 <ShoppingCart
                   size={16}
-                  className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
+                  className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400 cursor-pointer"
                 />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-logo-red text-white text-[10px] sm:text-xs flex items-center justify-center">
