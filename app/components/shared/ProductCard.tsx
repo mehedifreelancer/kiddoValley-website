@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -99,6 +99,18 @@ export default function ProductCard({
 
   const variantLabel = getVariantLabel(currentVariant);
 
+  const calculateActiveBadgeIndex = (
+    variant: Variant | null,
+  ): number | null => {
+    if (!variant || !primaryAttribute) return null;
+    const label = getVariantLabel(variant);
+    if (label) {
+      const idx = variantBadges.indexOf(label);
+      return idx !== -1 ? idx : null;
+    }
+    return null;
+  };
+
   const getDefaultBadgeIndex = (): number | null => {
     if (!defaultVariant || !primaryAttribute) return null;
     const label = getVariantLabel(defaultVariant);
@@ -113,18 +125,39 @@ export default function ProductCard({
     getDefaultBadgeIndex(),
   );
 
+  useEffect(() => {
+    const newIndex = calculateActiveBadgeIndex(selectedVariant);
+    if (newIndex !== null) {
+      setActiveBadgeIndex(newIndex);
+    } else {
+      setActiveBadgeIndex(null);
+    }
+  }, [selectedVariant, variantBadges, primaryAttribute]);
+
+  // ✅ আপডেটেড handleBadgeClick – স্টকওয়ালা ভেরিয়েন্টকে প্রাধান্য দেয়
   const handleBadgeClick = (badgeValue: string, idx: number) => {
     if (!primaryKey) return;
-    const matched = product.variants.find(
-      (v) => v.attributes?.[primaryKey] === badgeValue,
+
+    // ১. প্রথমে স্টকওয়ালা ভেরিয়েন্ট খুঁজি
+    let matched = product.variants.find(
+      (v) =>
+        v.attributes?.[primaryKey] === badgeValue &&
+        (v.inStock === "in stock" || v.inStock === "less than 5"),
     );
+
+    // ২. স্টকওয়ালা না পেলে যেকোনো ম্যাচিং ভেরিয়েন্ট
+    if (!matched) {
+      matched = product.variants.find(
+        (v) => v.attributes?.[primaryKey] === badgeValue,
+      );
+    }
+
     if (matched) {
       if (selectedVariant?.id === matched.id) {
         setSelectedVariant(null);
         setActiveBadgeIndex(getDefaultBadgeIndex());
       } else {
         setSelectedVariant(matched);
-        setActiveBadgeIndex(idx);
       }
     }
   };
@@ -206,7 +239,6 @@ export default function ProductCard({
         transition={{ duration: 0.3 }}
         className="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm hover:shadow-xl border border-stone-200/60 dark:border-dark-border/60 overflow-hidden transition-all duration-300 h-full flex flex-col mx-auto w-full"
       >
-        {/* Image Container – স্মুথ হোভার জুম */}
         <div className="relative flex-shrink-0 bg-gradient-to-br from-rose-50/50 to-purple-50/50 dark:from-dark-surface/80 dark:to-dark-surface/60">
           <Link
             href={`/products/${product.slug}`}
@@ -232,7 +264,6 @@ export default function ProductCard({
             </div>
           </Link>
 
-          {/* Badges */}
           {displayDiscount > 0 && (
             <div className="absolute top-3 left-3 z-10">
               <span className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-bold rounded-lg shadow-md tracking-wide">
@@ -249,7 +280,6 @@ export default function ProductCard({
           </div>
         </div>
 
-        {/* Variant Section */}
         {totalVariants > 0 && (
           <div className="p-3 pb-2 border-b border-stone-100 dark:border-dark-border/50">
             <div className="flex items-center justify-between">
@@ -273,7 +303,6 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Content */}
         <div className="flex flex-col flex-grow">
           <div className="px-3 pb-4">
             <Link href={`/products/${product.slug}`}>
@@ -299,7 +328,6 @@ export default function ProductCard({
               )}
             </div>
 
-            {/* Variant Badges */}
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               {primaryKey && (
                 <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">
@@ -336,7 +364,6 @@ export default function ProductCard({
             </div>
           </div>
 
-          {/* Action Buttons */}
           {showButtons && (
             <div className="px-3 pb-4 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-2">
               <Button
@@ -365,7 +392,6 @@ export default function ProductCard({
         </div>
       </motion.div>
 
-      {/* Video Modal */}
       {isModalOpen && product.videoUrl && (
         <Modal
           title={`${product.name} – ভিডিও প্রিভিউ`}

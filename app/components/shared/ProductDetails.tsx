@@ -324,12 +324,12 @@ export default function ProductDetails({
 
             {/* ব্যাজ */}
             {displayDiscount > 0 && (
-              <span className="absolute top-4 left-4 px-3 py-1.5 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-sm font-bold rounded-lg shadow-md z-10">
+              <span className="absolute top-1 left-1 px-2 lg:px-3 py-1  bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs lg:text-sm font-bold rounded-lg shadow-md z-10">
                 -{displayDiscount}%
               </span>
             )}
             <span
-              className={`absolute top-4 right-4 px-2 lg:px-3 py-0.5 lg:py-1  rounded-md lg:rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
+              className={`absolute top-1 right-1 px-2 lg:px-3 py-0.5 lg:py-1  rounded-md lg:rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
             >
               {stockLabel}
             </span>
@@ -438,10 +438,10 @@ export default function ProductDetails({
               </span>
               {displayDiscount > 0 && (
                 <>
-                  <del className="text-sm text-stone-400 dark:text-stone-500 line-through">
+                  <del className="ml-0 lg:ml-2 text-sm text-stone-400 dark:text-stone-500 line-through">
                     ৳{displayPrice.toFixed(2)}
                   </del>
-                  <span className="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                  <span className=" text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
                     {displayDiscount}% ছাড়
                   </span>
                 </>
