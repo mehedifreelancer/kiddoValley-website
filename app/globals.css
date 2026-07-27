@@ -192,3 +192,6 @@ body {
   position: absolute;
   /* নির্দিষ্ট পজিশনে লোগো কভার করো */
 }
+.swiper-button-disabled{
+  opacity: .5;
+}

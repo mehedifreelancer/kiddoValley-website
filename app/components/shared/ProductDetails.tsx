@@ -199,30 +199,18 @@ export default function ProductDetails({
   const handleAddToCart = useCallback(() => {
     if (!currentVariant) return;
     const uniqueId = `${product.id}-${currentVariant.sku}`;
-    const displayName = variantLabel
-      ? `${product.name} (${variantLabel})`
-      : product.name;
-
     addToCart({
       id: uniqueId,
-      name: displayName,
+      name: product.name, // ✅ ব্র্যাকেট বাদ
       price: displayPrice,
       imageUrl:
         currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
       sku: currentVariant.sku,
       variant: currentVariant,
-      quantity: quantity, // ← পরিমাণ ব্যবহার করছি
+      quantity: quantity,
     });
     openCart();
-  }, [
-    currentVariant,
-    product,
-    displayPrice,
-    addToCart,
-    openCart,
-    variantLabel,
-    quantity,
-  ]);
+  }, [currentVariant, product, displayPrice, addToCart, openCart, quantity]);
 
   const handleIncrement = useCallback(() => setQuantity((q) => q + 1), []);
   const handleDecrement = useCallback(
@@ -314,10 +302,10 @@ export default function ProductDetails({
 
             {/* নেভিগেশন বাটন */}
             <div className="absolute inset-0 pointer-events-none z-20">
-              <button className="custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+              <button className="cursor-pointer custom-swiper-button-prev absolute left-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
                 <ChevronLeft size={15} />
               </button>
-              <button className="custom-swiper-button-next absolute right-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
+              <button className="cursor-pointer custom-swiper-button-next absolute right-2 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 text-stone-800 dark:text-white w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105">
                 <ChevronRight size={15} />
               </button>
             </div>
