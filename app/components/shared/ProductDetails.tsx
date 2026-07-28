@@ -114,6 +114,7 @@ export default function ProductDetails({
   // ===== অ্যাট্রিবিউট =====
   const primaryAttributes = product?.attributeOrderByPriority || [];
 
+  // ---- ডিফল্ট ভেরিয়েন্ট (শুধু পতনের জন্য) ----
   const defaultVariant = useMemo(() => {
     if (!product?.variants || product.variants.length === 0) return null;
     return (
@@ -123,10 +124,113 @@ export default function ProductDetails({
     );
   }, [product?.variants]);
 
-  const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
+  // ---- অবস্থা: সিলেক্টেড অ্যাট্রিবিউট মান ----
+  const [selectedValues, setSelectedValues] = useState<Record<string, string>>(
+    {},
+  );
+  // ---- অবস্থা: ম্যাচিং ভেরিয়েন্ট ----
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+
+  // ---- প্রাথমিক মান সেট করা ----
+  useEffect(() => {
+    if (!product?.variants || product.variants.length === 0) return;
+
+    // প্রতিটি অ্যাট্রিবিউটের প্রথম উপলব্ধ মান নির্বাচন করি
+    const defaultFilters: Record<string, string> = {};
+    primaryAttributes.forEach((attr) => {
+      if (attr.values.length > 0) {
+        defaultFilters[attr.key] = attr.values[0];
+      }
+    });
+    setSelectedValues(defaultFilters);
+
+    // যে ভেরিয়েন্ট সব ডিফল্ট মান মেলে তাকে সিলেক্ট করি
+    const initialVariant = product.variants.find((v) =>
+      Object.entries(defaultFilters).every(
+        ([k, val]) => v.attributes?.[k] === val,
+      ),
+    );
+    setSelectedVariant(initialVariant || product.variants[0]);
+  }, [product, primaryAttributes]);
+
+  // ---- প্রতিটি অ্যাট্রিবিউটের জন্য উপলব্ধ মান (পূর্ববর্তী সিলেকশনের উপর ভিত্তি করে) ----
+  const availableValuesMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    const priorityKeys = primaryAttributes.map((a) => a.key);
+
+    priorityKeys.forEach((key, index) => {
+      // পূর্ববর্তী অ্যাট্রিবিউটগুলোর মান যাদের সাথে মেলে এমন ভেরিয়েন্ট খুঁজি
+      const priorKeys = priorityKeys.slice(0, index);
+      const matchingVariants = product.variants.filter((variant) => {
+        return priorKeys.every((priorKey) => {
+          const selectedVal = selectedValues[priorKey];
+          if (!selectedVal) return true; // যদি সিলেক্ট না হয় তাহলে সব পাস
+          return variant.attributes?.[priorKey] === selectedVal;
+        });
+      });
+
+      // এই অ্যাট্রিবিউটের জন্য ইউনিক মান সংগ্রহ করি
+      const values = new Set<string>();
+      matchingVariants.forEach((variant) => {
+        const val = variant.attributes?.[key];
+        if (val !== undefined && val !== null) {
+          values.add(String(val));
+        }
+      });
+      map[key] = Array.from(values);
+    });
+
+    return map;
+  }, [primaryAttributes, product.variants, selectedValues]);
+
+  // ---- সিলেক্টেড ভ্যালু অনুযায়ী ম্যাচিং ভেরিয়েন্ট (রিয়েল টাইম) ----
+  const matchingVariant = useMemo(() => {
+    const selectedKeys = Object.keys(selectedValues).filter(
+      (k) => selectedValues[k],
+    );
+    if (selectedKeys.length === 0) return null;
+
+    return (
+      product.variants.find((variant) =>
+        selectedKeys.every(
+          (key) => variant.attributes?.[key] === selectedValues[key],
+        ),
+      ) || null
+    );
+  }, [product.variants, selectedValues]);
+
+  // ---- হ্যান্ডেল ফিল্টার পরিবর্তন (ক্যাসকেড ও রিসেট) ----
+  const handleFilterChange = useCallback(
+    (key: string, value: string) => {
+      const priorityKeys = primaryAttributes.map((a) => a.key);
+      const currentIdx = priorityKeys.indexOf(key);
+      if (currentIdx === -1) return;
+
+      // আপডেট করা অবজেক্ট
+      const newSelected = { ...selectedValues, [key]: value };
+
+      // এই অ্যাট্রিবিউটের পরে সব মান রিসেট করি (নিম্ন অগ্রাধিকার)
+      for (let i = currentIdx + 1; i < priorityKeys.length; i++) {
+        delete newSelected[priorityKeys[i]];
+      }
+
+      setSelectedValues(newSelected);
+
+      // নতুন সিলেকশনের সাথে মেলে এমন ভেরিয়েন্ট খুঁজি
+      const matched = product.variants.find((variant) =>
+        Object.entries(newSelected).every(
+          ([k, val]) => variant.attributes?.[k] === val,
+        ),
+      );
+      setSelectedVariant(matched || null);
+    },
+    [primaryAttributes, product.variants, selectedValues],
+  );
+
+  // ---- কারেন্ট ভেরিয়েন্ট (ম্যাচিং অথবা ডিফল্ট) ----
   const currentVariant = selectedVariant || defaultVariant;
 
-  // ===== প্রাইমারি কী ও ভেরিয়েন্ট লেবেল (কার্টের জন্য) =====
+  // ---- প্রাইমারি কী (কার্ট লেবেলের জন্য) ----
   const primaryKey = product.attributeOrderByPriority?.[0]?.key || null;
   const variantLabel = useMemo(() => {
     if (!currentVariant || !primaryKey) return "";
@@ -134,16 +238,7 @@ export default function ProductDetails({
     return value ? String(value) : "";
   }, [currentVariant, primaryKey]);
 
-  const [filters, setFilters] = useState<Record<string, string>>(() => {
-    const defaultFilters: Record<string, string> = {};
-    primaryAttributes.forEach((attr) => {
-      if (attr.values.length > 0) {
-        defaultFilters[attr.key] = attr.values[0];
-      }
-    });
-    return defaultFilters;
-  });
-
+  // ---- মূল্য ও স্টক ----
   const displayPrice = currentVariant?.price ?? 0;
   const displayDiscount = currentVariant?.discount ?? 0;
   const displayInStock = currentVariant?.inStock || "out of stock";
@@ -170,38 +265,13 @@ export default function ProductDetails({
       "out of stock": "স্টক শেষ",
     }[displayInStock] || displayInStock;
 
-  const handleFilterChange = useCallback(
-    (key: string, value: string) => {
-      const newFilters = { ...filters, [key]: value };
-      setFilters(newFilters);
-      const matched = product.variants.find((v) =>
-        Object.entries(newFilters).every(([k, val]) => {
-          if (!val) return true;
-          return v.attributes?.[k] === val;
-        }),
-      );
-      if (matched) {
-        setSelectedVariant(matched);
-        const idx = mainSlides.findIndex(
-          (slide) =>
-            slide.type === "image" &&
-            slide.url === (matched.imgUrl || product.thumbnailImage || ""),
-        );
-        if (idx !== -1 && mainSwiperRef.current) {
-          mainSwiperRef.current.slideTo(idx);
-        }
-      }
-    },
-    [filters, product, mainSlides],
-  );
-
-  // ===== কার্টে যোগ – ভেরিয়েন্ট লেবেল সহ =====
+  // ---- কার্টে যোগ ----
   const handleAddToCart = useCallback(() => {
     if (!currentVariant) return;
     const uniqueId = `${product.id}-${currentVariant.sku}`;
     addToCart({
       id: uniqueId,
-      name: product.name, // ✅ ব্র্যাকেট বাদ
+      name: product.name,
       price: displayPrice,
       imageUrl:
         currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
@@ -228,6 +298,7 @@ export default function ProductDetails({
     if (onVideoClose) onVideoClose();
   }, [onVideoClose]);
 
+  // ---- থাম্বনেইল সিঙ্ক ----
   useEffect(() => {
     if (thumbSwiper && mainSwiperRef.current) {
       mainSwiperRef.current.thumbs.swiper = thumbSwiper;
@@ -235,6 +306,19 @@ export default function ProductDetails({
       mainSwiperRef.current.update();
     }
   }, [thumbSwiper]);
+
+  // ---- যখন ভেরিয়েন্ট পরিবর্তিত হয়, মেইন স্লাইডার আপডেট করি ----
+  useEffect(() => {
+    if (!currentVariant || !mainSwiperRef.current) return;
+    const imgUrl = currentVariant.imgUrl || product.thumbnailImage;
+    if (!imgUrl) return;
+    const idx = mainSlides.findIndex(
+      (slide) => slide.type === "image" && slide.url === imgUrl,
+    );
+    if (idx !== -1) {
+      mainSwiperRef.current.slideTo(idx);
+    }
+  }, [currentVariant, mainSlides, product.thumbnailImage]);
 
   const visibleAttributes = primaryAttributes.filter(
     (attr) => attr.values.length > 0,
@@ -312,16 +396,16 @@ export default function ProductDetails({
 
             {/* ব্যাজ */}
             {displayDiscount > 0 && (
-              <span className="absolute top-1 left-1 px-2 lg:px-3 py-1  bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs lg:text-sm font-bold rounded-lg shadow-md z-10">
+              <span className="absolute top-1 left-1 px-2 lg:px-3 py-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs lg:text-sm font-bold rounded-lg shadow-md z-10">
                 -{displayDiscount}%
               </span>
             )}
             <span
-              className={`absolute top-1 right-1 px-2 lg:px-3 py-0.5 lg:py-1  rounded-md lg:rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
+              className={`absolute top-1 right-1 px-2 lg:px-3 py-0.5 lg:py-1 rounded-md lg:rounded-lg text-sm font-medium shadow-sm backdrop-blur-sm z-10 ${stockStatusColor}`}
             >
               {stockLabel}
             </span>
-            <span className="absolute bottom-1 left-1 px-3   lg:px-3 py-1 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-xs lg:text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border z-10">
+            <span className="absolute bottom-1 left-1 px-3 lg:px-3 py-1 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm rounded-full text-xs lg:text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-dark-border z-10">
               {product.category?.name || "ক্যাটাগরি"}
             </span>
           </div>
@@ -389,29 +473,40 @@ export default function ProductDetails({
             )}
           </div>
 
+          {/* অ্যাট্রিবিউট ফিল্টার – ক্যাসকেডিং */}
           {visibleAttributes.length > 0 && (
             <div className="space-y-3">
               {visibleAttributes.map((attr) => {
-                const currentValue = filters[attr.key] || "";
+                const availableValues = availableValuesMap[attr.key] || [];
+                const currentValue = selectedValues[attr.key] || "";
                 return (
                   <div key={attr.key}>
                     <label className="text-sm font-medium text-stone-700 dark:text-stone-300 block mb-1">
                       {attr.key}:
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {attr.values.map((val) => (
-                        <button
-                          key={val}
-                          onClick={() => handleFilterChange(attr.key, val)}
-                          className={`px-2 lg:px-3 lg:py-1 text-xs lg:text-sm rounded-full border transition-all ${
-                            currentValue === val
-                              ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700"
-                              : "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200"
-                          }`}
-                        >
-                          {val}
-                        </button>
-                      ))}
+                      {attr.values.map((val) => {
+                        const isAvailable = availableValues.includes(val);
+                        const isSelected = currentValue === val;
+                        return (
+                          <button
+                            key={val}
+                            onClick={() =>
+                              isAvailable && handleFilterChange(attr.key, val)
+                            }
+                            disabled={!isAvailable}
+                            className={`px-2 lg:px-3 lg:py-1 text-xs lg:text-sm rounded-full border transition-all ${
+                              isSelected
+                                ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700"
+                                : isAvailable
+                                  ? "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200 dark:hover:bg-dark-elevated/80 cursor-pointer"
+                                  : "bg-stone-50 dark:bg-dark-surface/30 text-stone-400 dark:text-stone-600 border-stone-100 dark:border-dark-border/20 cursor-not-allowed opacity-50"
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -429,27 +524,24 @@ export default function ProductDetails({
                   <del className="ml-0 lg:ml-2 text-sm text-stone-400 dark:text-stone-500 line-through">
                     ৳{displayPrice.toFixed(2)}
                   </del>
-                  <span className=" text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                  <span className="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
                     {displayDiscount}% ছাড়
                   </span>
                 </>
               )}
             </div>
-            {/* পরিমাণ সিলেক্টর – এখন চালু */}
+            {/* পরিমাণ সিলেক্টর – (ঐচ্ছিক) */}
             {/* <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                 পরিমাণ:
               </span>
-              <div className=" flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
+              <div className="flex items-center border border-stone-200 dark:border-dark-border rounded-lg overflow-hidden">
                 <button
                   onClick={handleDecrement}
-                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors w-fu"
+                  className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
                   aria-label="Decrease quantity"
                 >
-                  <Minus
-                    size={18}
-                    className="text-stone-600 dark:text-stone-400"
-                  />
+                  <Minus size={18} className="text-stone-600 dark:text-stone-400" />
                 </button>
                 <span className="w-12 text-center font-medium text-stone-800 dark:text-stone-200">
                   {quantity}
@@ -459,10 +551,7 @@ export default function ProductDetails({
                   className="p-2 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-colors"
                   aria-label="Increase quantity"
                 >
-                  <Plus
-                    size={18}
-                    className="text-stone-600 dark:text-stone-400"
-                  />
+                  <Plus size={18} className="text-stone-600 dark:text-stone-400" />
                 </button>
               </div>
             </div> */}
@@ -503,7 +592,7 @@ export default function ProductDetails({
         </div>
       </div>
 
-      {/* ===== ভিডিও মডাল – শুধু ডিটেইল পেজে (showIngInModal false) ===== */}
+      {/* ===== ভিডিও মডাল – শুধু ডিটেইল পেজে ===== */}
       {!showIngInModal && isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
