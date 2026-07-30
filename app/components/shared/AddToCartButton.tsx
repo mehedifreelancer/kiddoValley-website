@@ -1,4 +1,3 @@
-// components/products/AddToCartButton.tsx
 "use client";
 
 import React from "react";
@@ -10,20 +9,23 @@ interface AddToCartButtonProps {
   productId: string;
   productName: string;
   price: number;
+  stockId: number; // ✅ stockId আবশ্যক
   imageUrl?: string;
   author?: string;
+  variant?: any; // যদি ভেরিয়েন্ট ডেটা দরকার হয়
 }
 
 const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
   productName,
   price,
+  stockId,
   imageUrl,
   author,
+  variant,
 }) => {
   const { cart, addToCart, updateQuantity } = useGlobal();
 
-  // Find current item in cart
   const cartItem = cart.find((item) => item.id === productId);
   const quantity = cartItem?.quantity || 0;
 
@@ -32,8 +34,11 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       id: productId,
       name: productName,
       price: price,
+      stockId: stockId, // ✅ stockId ব্যবহার
       imageUrl: imageUrl,
       author: author,
+      variant: variant,
+      quantity: 1,
     });
   };
 

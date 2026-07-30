@@ -17,6 +17,7 @@ interface Variant {
   discount: number;
   inStock: "in stock" | "less than 5" | "out of stock";
   imgUrl: string | null;
+  stockId: number;
   attributes: Record<string, string>;
 }
 
@@ -196,31 +197,47 @@ export default function ProductCard({
   };
   const handleCloseModal = () => setIsModalOpen(false);
 
+  // ProductCard.tsx - handleAddToCart ফাংশনটি নিচের মতো আপডেট করুন
+
   const handleAddToCart = () => {
-  if (!currentVariant) {
+    // ✅ currentVariant থেকে stockId নিন
+    const stockId = currentVariant?.stockId;
+    if (!stockId) {
+      console.error("❌ stockId missing for variant:", currentVariant);
+      // ফ্যালব্যাক: product.variants থেকে প্রথম স্টক আইডি খুঁজুন (যদি currentVariant না থাকে)
+      const fallback = product.variants?.find((v) => v.stockId)?.stockId;
+      if (!fallback) {
+        toast.error("স্টক আইডি পাওয়া যায়নি");
+        return;
+      }
+      // fallback ব্যবহার করুন
+      addToCart({
+        id: String(product.id),
+        name: product.name,
+        stockId: fallback,
+        price: displayPrice,
+        imageUrl: displayImage,
+        author: product.category?.name || "",
+        quantity: 1,
+      });
+      openCart();
+      return;
+    }
+
+    // ✅ সঠিক stockId সহ কার্টে যোগ করুন
+    const uniqueId = `${product.id}-${currentVariant.sku}`;
     addToCart({
-      id: String(product.id),
-      name: product.name, // ✅ ব্র্যাকেট বাদ
+      id: uniqueId,
+      name: product.name,
       price: displayPrice,
+      stockId: stockId,
       imageUrl: displayImage,
-      author: product.category?.name || "",
+      sku: currentVariant.sku,
+      variant: currentVariant,
       quantity: 1,
     });
     openCart();
-    return;
-  }
-  const uniqueId = `${product.id}-${currentVariant.sku}`;
-  addToCart({
-    id: uniqueId,
-    name: product.name, // ✅ ব্র্যাকেট বাদ
-    price: displayPrice,
-    imageUrl: displayImage,
-    sku: currentVariant.sku,
-    variant: currentVariant,
-    quantity: 1,
-  });
-  openCart();
-};
+  };
   const handleDetails = () => {
     window.location.href = `/products/${product.slug}`;
   };

@@ -266,13 +266,27 @@ export default function ProductDetails({
     }[displayInStock] || displayInStock;
 
   // ---- কার্টে যোগ ----
+  // ProductDetails.tsx - handleAddToCart ফাংশন
+
   const handleAddToCart = useCallback(() => {
-    if (!currentVariant) return;
+    if (!currentVariant) {
+      toast.error("কোনো ভেরিয়েন্ট সিলেক্ট করা নেই");
+      return;
+    }
+
+    // ✅ stockId বের করুন (currentVariant-এ stockId থাকবে)
+    const stockId = currentVariant.stockId;
+    if (!stockId) {
+      toast.error("এই ভেরিয়েন্টের জন্য স্টক আইডি পাওয়া যায়নি");
+      return;
+    }
+
     const uniqueId = `${product.id}-${currentVariant.sku}`;
     addToCart({
       id: uniqueId,
       name: product.name,
       price: displayPrice,
+      stockId: stockId, // ✅ সঠিক stockId
       imageUrl:
         currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
       sku: currentVariant.sku,
