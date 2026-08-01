@@ -380,13 +380,13 @@ export default function ProductCard({
                       key={idx}
                       onClick={() => handleBadgeClick(badge, idx)}
                       className={`
-                        cursor-pointer inline-block px-2.5 py-0.5 rounded-md text-xs font-medium border transition-all duration-200
-                        ${
-                          idx === activeBadgeIndex
-                            ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700 shadow-sm"
-                            : "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200 dark:hover:bg-stone-700/40"
-                        }
-                      `}
+    cursor-pointer inline-block px-2.5 py-0.5 rounded-md text-xs font-medium border transition-all duration-200
+    ${
+      idx === activeBadgeIndex
+        ? "bg-gradient-to-r from-[#E57373] to-[#BA68C8] text-white border-transparent shadow-sm"
+        : "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200 dark:hover:bg-stone-700/40"
+    }
+  `}
                     >
                       {badge}
                     </span>

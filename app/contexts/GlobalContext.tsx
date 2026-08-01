@@ -1,4 +1,3 @@
-// contexts/GlobalContext.tsx
 "use client";
 
 import React, {
@@ -9,17 +8,30 @@ import React, {
   ReactNode,
 } from "react";
 
-// Cart Item Interface
+// ---- Types ----
 export interface CartItem {
   id: string;
   name: string;
   price: number;
   quantity: number;
+  stockId: number;
   imageUrl?: string;
+  sku?: string;
+  variant?: any;
   author?: string;
 }
 
-// Context type with everything
+export interface WebSettings {
+  logoUrl: string | null;
+  socialLinks: {
+    facebook: string;
+    instagram: string;
+    youtube: string;
+    website: string;
+  };
+  footerText: string;
+}
+
 interface GlobalContextType {
   // Theme
   themeMode: "light" | "dark";
@@ -40,19 +52,22 @@ interface GlobalContextType {
   closeCart: () => void;
   toggleCart: () => void;
 
-  // Mobile Menu Sidebar
+  // Mobile Menu
   isMenuOpen: boolean;
   openMenu: () => void;
   closeMenu: () => void;
   toggleMenu: () => void;
+
+  // ✅ Web Settings
+  webSettings: WebSettings | null;
+  setWebSettings: (settings: WebSettings) => void;
 }
 
-// Create context
+// ---- Context ----
 export const GlobalContext = createContext<GlobalContextType | undefined>(
   undefined,
 );
 
-// Custom hook
 export function useGlobal() {
   const context = useContext(GlobalContext);
   if (!context) {
@@ -61,19 +76,31 @@ export function useGlobal() {
   return context;
 }
 
-// Provider
-export function GlobalProvider({ children }: { children: ReactNode }) {
-  // Theme state
+// ---- Provider Props ----
+interface GlobalProviderProps {
+  children: ReactNode;
+  initialSettings?: WebSettings | null; // ✅ layout থেকে আসবে
+}
+
+export function GlobalProvider({
+  children,
+  initialSettings = null,
+}: GlobalProviderProps) {
+  // Theme
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
 
-  // Cart state
+  // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // ✅ Web Settings
+  const [webSettings, setWebSettings] = useState<WebSettings | null>(
+    initialSettings,
+  );
+
   // Load from localStorage on mount
   useEffect(() => {
-    // Load theme
     const savedTheme = localStorage.getItem("themeMode") as
       | "light"
       | "dark"
@@ -84,24 +111,22 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         document.documentElement.classList.add("dark");
       }
     }
-
-    // Load cart from localStorage
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("Failed to parse cart from localStorage", error);
+      } catch {
+        console.error("Failed to parse cart");
       }
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // Update document when theme changes
+  // Theme effect
   useEffect(() => {
     if (themeMode === "dark") {
       document.documentElement.classList.add("dark");
@@ -111,31 +136,27 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("themeMode", themeMode);
   }, [themeMode]);
 
-  // Cart functions
+  // ---- Cart functions ----
   const addToCart = (
     item: Omit<CartItem, "quantity"> & { quantity?: number },
   ) => {
     setCart((prev) => {
-      const existingItem = prev.find((i) => i.id === item.id);
-      const quantityToAdd = item.quantity || 1;
-
-      if (existingItem) {
+      const existing = prev.find((i) => i.id === item.id);
+      const qty = item.quantity || 1;
+      if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + quantityToAdd } : i,
+          i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
         );
-      } else {
-        return [
-          ...prev,
-          {
-            ...item,
-            quantity: quantityToAdd,
-            imageUrl: item.imageUrl || "",
-          },
-        ];
       }
+      return [
+        ...prev,
+        {
+          ...item,
+          quantity: qty,
+          imageUrl: item.imageUrl || "",
+        },
+      ];
     });
-
-    // Open cart sidebar when item is added
     setIsCartOpen(true);
   };
 
@@ -153,38 +174,30 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  // Cart calculations
   const cartTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Cart sidebar functions - with menu awareness
+  // Sidebar toggles
   const openCart = () => {
     if (isMenuOpen) setIsMenuOpen(false);
     setIsCartOpen(true);
   };
-
   const closeCart = () => setIsCartOpen(false);
-
   const toggleCart = () => {
     if (!isCartOpen && isMenuOpen) setIsMenuOpen(false);
     setIsCartOpen((prev) => !prev);
   };
 
-  // Mobile menu functions - with cart awareness
   const openMenu = () => {
     if (isCartOpen) setIsCartOpen(false);
     setIsMenuOpen(true);
   };
-
   const closeMenu = () => setIsMenuOpen(false);
-
   const toggleMenu = () => {
     if (!isMenuOpen && isCartOpen) setIsCartOpen(false);
     setIsMenuOpen((prev) => !prev);
@@ -193,11 +206,8 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   return (
     <GlobalContext.Provider
       value={{
-        // Theme
         themeMode,
         setThemeMode,
-
-        // Cart
         cart,
         addToCart,
         removeFromCart,
@@ -205,18 +215,16 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         clearCart,
         cartTotal,
         cartCount,
-
-        // Cart Sidebar
         isCartOpen,
         openCart,
         closeCart,
         toggleCart,
-
-        // Mobile Menu Sidebar - NOW INCLUDED!
         isMenuOpen,
         openMenu,
         closeMenu,
         toggleMenu,
+        webSettings,
+        setWebSettings,
       }}
     >
       {children}

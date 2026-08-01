@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   description: "Magical books for young readers",
 };
 
-// Web Settings টাইপ (ঐচ্ছিক, কিন্তু ভালো)
 interface WebSettings {
   logoUrl: string | null;
   socialLinks: {
@@ -27,7 +26,6 @@ interface WebSettings {
   footerText: string;
 }
 
-// ফ্যালব্যাক ডেটা
 const fallbackSettings: WebSettings = {
   logoUrl: null,
   socialLinks: {
@@ -46,27 +44,26 @@ export default async function RootLayout({
   children: React.ReactNode;
   modal?: React.ReactNode;
 }) {
-  // সার্ভার-সাইডে ডেটা ফেচ (শুধু একবার)
   let settings = fallbackSettings;
   try {
     settings = await getPublicWebSettings();
     console.log(settings);
   } catch (error) {
     console.error("Failed to fetch web settings:", error);
-    // fallback ইতিমধ্যে সেট আছে
   }
 
   return (
     <html suppressHydrationWarning>
       <body>
         <Providers>
-          <GlobalProvider>
+          {/* ✅ সেটিংস প্রপস হিসেবে পাঠানো হচ্ছে */}
+          <GlobalProvider initialSettings={settings}>
             <Header
               logoUrl={settings.logoUrl}
               socialLinks={settings.socialLinks}
             />
             <main className="relative min-h-screen overflow-hidden">
-              {/* Background – অপরিবর্তিত */}
+              {/* Background (অপরিবর্তিত) */}
               <div className="absolute inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated">
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div
@@ -109,7 +106,7 @@ export default async function RootLayout({
                     }}
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cream-50/30 to-cream-200/30 dark:via-dark-bg/30 dark:to-dark-surface/30 pointer-events-none" />
               </div>
               <div className="relative mx-auto w-full">{children}</div>
             </main>

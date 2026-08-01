@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,8 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { placeOrder } from "./checkout.service";
 import { checkBulkStock } from "../services/cart.service";
-import { checkStockForAdd, getUnavailableItemsList } from "../lib/stockUtils";
 import { checkoutSchema } from "./checkout.schema";
+import { checkStockForAdd, getUnavailableItemsList } from "../lib/stockUtils";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -26,6 +26,7 @@ export default function CheckoutPage() {
     clearCart,
   } = useGlobal();
 
+  // ✅ localStorage থেকে প্রি-ফিল
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -39,6 +40,23 @@ export default function CheckoutPage() {
   const deliveryCharge = 60;
   const grandTotal = cartTotal + deliveryCharge;
 
+  // ✅ মাউন্ট হলে localStorage থেকে my-info পড়ুন
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("my-info");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setFormData({
+          name: parsed.name || "",
+          phone: parsed.phone || "",
+          address: parsed.address || "",
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -46,7 +64,7 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // কোয়ান্টিটি আপডেট
+  // ✅ কোয়ান্টিটি আপডেট (একই লজিক)
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     const existingItem = cart.find((item) => item.id === itemId);
     if (!existingItem) return;
@@ -91,10 +109,9 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ ১. Zod দিয়ে ফর্ম ভ্যালিডেশন
+    // Zod ভ্যালিডেশন
     const result = checkoutSchema.safeParse(formData);
     if (!result.success) {
-      // সাধারণ টোস্ট – প্রথম ভুল বার্তাটি দেখান
       const firstError = result.error.issues[0]?.message;
       toast.error(firstError || "দয়া করে ফর্মটি সঠিকভাবে পূর্ণ করুন");
       return;
@@ -141,7 +158,6 @@ export default function CheckoutPage() {
       const unavailable = results.filter((r) => !r.available);
       if (unavailable.length > 0) {
         const itemsList = getUnavailableItemsList(results, cart);
-        // স্টক এররের জন্য কাস্টম টোস্ট (কারণ এটি বিস্তারিত)
         toast.custom(
           (t) => (
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl max-w-md w-full border border-red-200 dark:border-red-800">
@@ -174,6 +190,7 @@ export default function CheckoutPage() {
         return;
       }
 
+      // ✅ অর্ডার পেলোড
       const payload = {
         customerName: cleanData.name,
         customerPhone: cleanData.phone,
@@ -196,6 +213,15 @@ export default function CheckoutPage() {
       setLoading(true);
       const response = await placeOrder(payload);
       console.log("✅ Order response:", response);
+
+      // ✅ localStorage-এ my-info সংরক্ষণ
+      const customerInfo = {
+        name: cleanData.name,
+        phone: cleanData.phone,
+        address: cleanData.address,
+      };
+      localStorage.setItem("my-info", JSON.stringify(customerInfo));
+
       toast.success(response.message || "অর্ডার সফলভাবে জমা হয়েছে!");
       clearCart();
       router.push("/order-confirmation");
@@ -212,21 +238,26 @@ export default function CheckoutPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center relative">
+      <div className="min-h-[60vh] sm:min-h-[70vh] flex flex-col items-center justify-center relative px-4">
         <div className="fixed inset-0 bg-gradient-to-br from-[#E57373]/10 via-[#BA68C8]/10 to-[#9575CD]/10 dark:from-[#E57373]/5 dark:via-[#BA68C8]/5 dark:to-[#9575CD]/5 backdrop-blur-xl -z-10" />
-        <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-2xl p-12 border border-white/30 dark:border-white/10 text-center">
+
+        <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-3xl shadow-2xl p-6 sm:p-10 lg:p-14 max-w-sm sm:max-w-lg w-full border border-white/30 dark:border-white/10 text-center transition-all duration-300">
           <ShoppingBag
-            size={64}
-            className="text-stone-300 dark:text-stone-600 mb-4 mx-auto"
+            size={56}
+            className="sm:size-16 lg:size-20 text-stone-300 dark:text-stone-600 mb-4 sm:mb-6 mx-auto opacity-80"
           />
-          <h1 className="text-2xl font-light text-stone-800 dark:text-stone-200 mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-stone-800 dark:text-stone-200 mb-2 sm:mb-3">
             আপনার কার্ট খালি
           </h1>
-          <p className="text-stone-600 dark:text-stone-400 mb-6">
+          <p className="text-sm sm:text-base lg:text-lg text-stone-600 dark:text-stone-400 mb-6 sm:mb-8">
             অর্ডার করতে চাইলে প্রথমে পণ্য যোগ করুন
           </p>
-          <Link href="/products">
-            <Button variant="primary" size="lg">
+          <Link href="/" className="inline-block">
+            <Button
+              variant="primary"
+              size="md"
+              className="px-6 py-2 sm:px-8 sm:py-3 text-sm sm:text-base"
+            >
               শপিং চালিয়ে যান
             </Button>
           </Link>
@@ -328,7 +359,6 @@ export default function CheckoutPage() {
               className="p-6 space-y-1 flex-1 flex flex-col"
             >
               <div className="space-y-6 flex-1">
-                {/* Name Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="name"
@@ -347,7 +377,6 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Phone Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="phone"
@@ -366,7 +395,6 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Address Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="address"

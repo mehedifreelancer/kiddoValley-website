@@ -50,8 +50,11 @@ export default function ProductDetails({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
+  // ✅ রিলেটেড প্রোডাক্ট ফেচ – শুধু একবার (ডুপ্লিকেট কল বন্ধ)
+  const fetchedRef = useRef(false);
   useEffect(() => {
-    if (product?.id) {
+    if (product?.id && !fetchedRef.current) {
+      fetchedRef.current = true;
       getRelatedProducts(product.id)
         .then(setRelatedProducts)
         .catch((err) =>
@@ -88,15 +91,13 @@ export default function ProductDetails({
     return imgs;
   }, [product]);
 
-  // ===== মেইন স্লাইডার আইটেম =====
+  // ===== মেইন স্লাইডার আইটেম (ভিডিও প্রথমে) =====
   const mainSlides = useMemo(() => {
     const slides: Array<
       | { type: "image"; url: string }
       | { type: "video"; url: string; thumbnail: string }
     > = [];
-    allImages.forEach((img) => {
-      slides.push({ type: "image", url: img });
-    });
+    // ✅ ভিডিও প্রথমে যোগ করুন
     if (product.videoUrl && videoThumbnail) {
       slides.push({
         type: "video",
@@ -104,18 +105,19 @@ export default function ProductDetails({
         thumbnail: videoThumbnail,
       });
     }
+    // তারপর ইমেজ
+    allImages.forEach((img) => {
+      slides.push({ type: "image", url: img });
+    });
     return slides;
   }, [allImages, product.videoUrl, videoThumbnail]);
 
-  // ===== থাম্বনেইল =====
+  // ===== থাম্বনেইল (ভিডিও প্রথমে) =====
   const thumbSlides = useMemo(() => {
     const slides: Array<
       | { type: "image"; url: string }
       | { type: "video"; url: string; thumbnail: string }
     > = [];
-    allImages.forEach((img) => {
-      slides.push({ type: "image", url: img });
-    });
     if (product.videoUrl && videoThumbnail) {
       slides.push({
         type: "video",
@@ -123,6 +125,9 @@ export default function ProductDetails({
         thumbnail: videoThumbnail,
       });
     }
+    allImages.forEach((img) => {
+      slides.push({ type: "image", url: img });
+    });
     return slides;
   }, [allImages, product.videoUrl, videoThumbnail]);
 
@@ -288,7 +293,6 @@ export default function ProductDetails({
 
     setIsAddingToCart(true);
     try {
-      // ✅ কমন ফাংশন ব্যবহার করুন
       const stockInfo = await checkStockForAdd(stockId, quantity, cart);
 
       if (!stockInfo.available) {
@@ -303,7 +307,6 @@ export default function ProductDetails({
         return;
       }
 
-      // স্টক থাকলে কার্টে যোগ করুন
       const uniqueId = `${product.id}-${currentVariant.sku}`;
       addToCart({
         id: uniqueId,
@@ -541,7 +544,7 @@ export default function ProductDetails({
                             disabled={!isAvailable}
                             className={`px-2 lg:px-3 lg:py-1 text-xs lg:text-sm rounded-full border transition-all ${
                               isSelected
-                                ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700"
+                                ? "bg-gradient-to-r from-[#E57373] to-[#BA68C8] text-white border-transparent shadow-sm"
                                 : isAvailable
                                   ? "bg-stone-100 dark:bg-dark-surface/60 text-stone-700 dark:text-stone-300 border-stone-200/50 dark:border-dark-border/40 hover:bg-stone-200 dark:hover:bg-dark-elevated/80 cursor-pointer"
                                   : "bg-stone-50 dark:bg-dark-surface/30 text-stone-400 dark:text-stone-600 border-stone-100 dark:border-dark-border/20 cursor-not-allowed opacity-50"

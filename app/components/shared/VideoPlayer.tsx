@@ -98,6 +98,9 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
+  // ✅ প্রোগ্রেস পার্সেন্টেজ
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   if (!videoId) {
     return (
       <div className="flex items-center justify-center min-h-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -107,10 +110,9 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
   }
 
   return (
-    <div className="w-full bg-black rounded-sm overflow-hidden  shadow-md select-none">
-      {/* ভিডিও ডিসপ্লে এরিয়া */}
+    <div className="w-full bg-black rounded-sm overflow-hidden shadow-md select-none">
+      {/* ভিডিও ডিসপ্লে */}
       <div className="relative aspect-video w-full overflow-hidden bg-black">
-        {/* থাম্বনেইল ও লোডার */}
         {!isLoaded && (
           <div className="absolute inset-0 z-10">
             <img
@@ -124,9 +126,10 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
           </div>
         )}
 
-        {/* মোবাইল ফ্রেম অপ্টিমাইজড প্লেয়ার উইন্ডো */}
         <div
-          className={`absolute top-[-25%] bottom-[-25%] left-[-2%] right-[-2%] w-[104%] h-[150%] pointer-events-none ${isLoaded ? "block" : "hidden"}`}
+          className={`absolute top-[-25%] bottom-[-25%] left-[-2%] right-[-2%] w-[104%] h-[150%] pointer-events-none ${
+            isLoaded ? "block" : "hidden"
+          }`}
         >
           <YouTube
             videoId={videoId}
@@ -151,10 +154,9 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
         </div>
       </div>
 
-      {/* নিচের নতুন কাস্টম কন্ট্রোল প্যানেল */}
-
+      {/* কাস্টম কন্ট্রোল প্যানেল */}
       <div className="bg-gray-200 dark:bg-gray-900 px-2 py-3 flex flex-col gap-2">
-        {/* প্রোগ্রেস বার (Time Seek) */}
+        {/* প্রোগ্রেস বার – গ্রেডিয়েন্ট ফিল সহ */}
         <div className="flex items-center gap-3 w-full">
           <span className="text-xs text-gray-400 font-mono min-w-[35px] text-right">
             {formatTime(currentTime)}
@@ -165,6 +167,10 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
             max={duration || 100}
             value={currentTime}
             onChange={handleSeekChange}
+            style={{
+              background: `linear-gradient(to right, #E57373 0%, #BA68C8 ${progressPercent}%, #374151 ${progressPercent}%, #374151 100%)`,
+              transition: "background 0.1s ease",
+            }}
             className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:h-2 transition-all"
           />
           <span className="text-xs text-gray-400 font-mono min-w-[35px]">
@@ -173,7 +179,7 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
 
           <button
             onClick={toggleMute}
-            className="text-gray-300  hover:text-white  p-1 rounded-lg transition-all active:scale-95 shadow-inner "
+            className="text-gray-300 hover:text-white p-1 rounded-lg transition-all active:scale-95 shadow-inner"
             title={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? (
@@ -184,9 +190,8 @@ export default function VideoPlayer({ url, title }: VideoPlayerProps) {
           </button>
         </div>
 
-        {/* কন্ট্রোলারের নিচের ৩-কলাম গ্রিড লেআউট */}
-        <div className="flex border-t border-gray-300 dark:border-gray-800  justify-center items-center mt-1">
-          {/* ২. মাঝখানে (Center): প্লে এবং পজ বাটন */}
+        {/* প্লে/পজ */}
+        <div className="flex border-t border-gray-300 dark:border-gray-800 justify-center items-center mt-1">
           <button
             onClick={togglePlay}
             className="mt-2 text-white hover:text-rose-500 bg-gray-800 hover:bg-gray-700 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-md border border-gray-700"
