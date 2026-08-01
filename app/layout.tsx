@@ -8,6 +8,7 @@ import Modal from "./components/shared/Modal";
 import CartSidebar from "./components/common/CartSidebar";
 import { Providers } from "./providers";
 import { getPublicWebSettings } from "./web-stetings/webSettings.service";
+import ToasterProvider from "./components/shared/ToasterProvider";
 
 export const metadata: Metadata = {
   title: "KiddoValley - Books for Kids",
@@ -119,6 +120,7 @@ export default async function RootLayout({
             />
             {modal}
             <CartSidebar />
+            <ToasterProvider />
           </GlobalProvider>
         </Providers>
       </body>

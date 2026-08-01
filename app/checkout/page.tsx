@@ -11,12 +11,15 @@ import CartItem from "../components/shared/CartItem";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { placeOrder } from "./checkout.service";
+import { checkBulkStock } from "../services/cart.service";
+import { checkStockForAdd, getUnavailableItemsList } from "../lib/stockUtils";
+import { checkoutSchema } from "./checkout.schema";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const {
     cart,
-    updateQuantity,
+    updateQuantity: globalUpdateQuantity,
     removeFromCart,
     cartTotal,
     cartCount,
@@ -30,6 +33,8 @@ export default function CheckoutPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [checkingStock, setCheckingStock] = useState(false);
+  const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
 
   const deliveryCharge = 60;
   const grandTotal = cartTotal + deliveryCharge;
@@ -41,28 +46,70 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // কোয়ান্টিটি আপডেট
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    const existingItem = cart.find((item) => item.id === itemId);
+    if (!existingItem) return;
+
+    if (newQuantity < existingItem.quantity) {
+      globalUpdateQuantity(itemId, newQuantity);
+      return;
+    }
+
+    const stockId = existingItem.stockId;
+    if (!stockId) {
+      toast.error("স্টক আইডি পাওয়া যায়নি");
+      return;
+    }
+
+    setUpdatingQuantity(itemId);
+    try {
+      const stockInfo = await checkStockForAdd(
+        stockId,
+        newQuantity - existingItem.quantity,
+        cart,
+      );
+      if (!stockInfo.available) {
+        if (stockInfo.currentQty === 0) {
+          toast.error(`"${existingItem.name}" - স্টক শেষ!`);
+        } else {
+          toast.error(
+            `"${existingItem.name}" - শুধুমাত্র ${stockInfo.currentQty}টি স্টকে আছে! (আপনি চাচ্ছেন ${newQuantity}টি)`,
+          );
+        }
+        return;
+      }
+      globalUpdateQuantity(itemId, newQuantity);
+      toast.success(`"${existingItem.name}" - কোয়ান্টিটি আপডেট করা হয়েছে`);
+    } catch (error: any) {
+      toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
+    } finally {
+      setUpdatingQuantity(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ফর্ম ভ্যালিডেশন
-    if (
-      !formData.name.trim() ||
-      !formData.phone.trim() ||
-      !formData.address.trim()
-    ) {
-      toast.error("দয়া করে নাম, ফোন ও ঠিকানা পূর্ণ করুন");
+    // ✅ ১. Zod দিয়ে ফর্ম ভ্যালিডেশন
+    const result = checkoutSchema.safeParse(formData);
+    if (!result.success) {
+      // সাধারণ টোস্ট – প্রথম ভুল বার্তাটি দেখান
+      const firstError = result.error.issues[0]?.message;
+      toast.error(firstError || "দয়া করে ফর্মটি সঠিকভাবে পূর্ণ করুন");
       return;
     }
+
+    const cleanData = result.data;
 
     if (cart.length === 0) {
       toast.error("আপনার কার্ট খালি");
       return;
     }
 
-    // ✅ stockId চেক – যদি না থাকে, তাহলে প্রথম স্টক আইডি খুঁজে বের করার চেষ্টা করুন
-    let items = cart.map((item) => {
+    // stockId প্রস্তুত
+    const stockItems = cart.map((item) => {
       let stockId = item.stockId;
-      // যদি stockId না থাকে, তাহলে variant থেকে প্রথম stockId বের করার চেষ্টা করুন
       if (!stockId && item.variant?.stocks && item.variant.stocks.length > 0) {
         stockId = item.variant.stocks[0]?.id;
         console.warn(
@@ -70,39 +117,83 @@ export default function CheckoutPage() {
         );
       }
       return {
-        stockId: stockId || 0, // fallback 0 (backend will error)
+        stockId: stockId || 0,
         quantity: item.quantity,
-        unitPrice: item.price,
-        totalPrice: item.price * item.quantity,
+        productName: item.name,
       };
     });
 
-    // চেক করুন কোনো stockId 0 আছে কিনা
-    const hasInvalidStock = items.some((item) => item.stockId === 0);
+    const hasInvalidStock = stockItems.some((item) => item.stockId === 0);
     if (hasInvalidStock) {
       toast.error(
         "কিছু পণ্যের স্টক আইডি পাওয়া যায়নি। দয়া করে পণ্যগুলো আবার যোগ করুন।",
       );
-      console.error("Invalid stockId in items:", items);
+      console.error("Invalid stockId in items:", stockItems);
       return;
     }
 
-    // পেলোড তৈরি করুন
-    const payload = {
-      customerName: formData.name,
-      customerPhone: formData.phone,
-      customerAddress: formData.address,
-      // optional fields (আপনি চাইলে formData-তে যোগ করতে পারেন)
-      items,
-      subtotal: cartTotal,
-      discountTotal: 0,
-      total: grandTotal,
-    };
-
-    console.log("📦 Sending order payload:", payload);
-
-    setLoading(true);
+    setCheckingStock(true);
     try {
+      const results = await checkBulkStock(
+        stockItems.map(({ stockId, quantity }) => ({ stockId, quantity })),
+      );
+
+      const unavailable = results.filter((r) => !r.available);
+      if (unavailable.length > 0) {
+        const itemsList = getUnavailableItemsList(results, cart);
+        // স্টক এররের জন্য কাস্টম টোস্ট (কারণ এটি বিস্তারিত)
+        toast.custom(
+          (t) => (
+            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl max-w-md w-full border border-red-200 dark:border-red-800">
+              <h4 className="font-bold text-red-600 dark:text-red-400 text-lg text-center">
+                ⚠️ দুঃখিত : স্টক স্বল্পতা
+              </h4>
+              <ul className="list-disc pl-5 mt-3 space-y-2">
+                {itemsList.map((msg, idx) => (
+                  <li
+                    key={idx}
+                    className="text-sm text-gray-700 dark:text-gray-300"
+                  >
+                    {msg}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="cursor-pointer px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  ঠিক আছে
+                </button>
+              </div>
+            </div>
+          ),
+          { duration: Infinity, position: "top-center" },
+        );
+        setCheckingStock(false);
+        return;
+      }
+
+      const payload = {
+        customerName: cleanData.name,
+        customerPhone: cleanData.phone,
+        customerAddress: cleanData.address,
+        items: stockItems.map(({ stockId, quantity }) => ({
+          stockId,
+          quantity,
+          unitPrice: cart.find((item) => item.stockId === stockId)?.price || 0,
+          totalPrice:
+            (cart.find((item) => item.stockId === stockId)?.price || 0) *
+            quantity,
+        })),
+        subtotal: cartTotal,
+        discountTotal: 0,
+        total: grandTotal,
+      };
+
+      console.log("📦 Sending order payload:", payload);
+
+      setLoading(true);
       const response = await placeOrder(payload);
       console.log("✅ Order response:", response);
       toast.success(response.message || "অর্ডার সফলভাবে জমা হয়েছে!");
@@ -115,6 +206,7 @@ export default function CheckoutPage() {
       );
     } finally {
       setLoading(false);
+      setCheckingStock(false);
     }
   };
 
@@ -176,10 +268,11 @@ export default function CheckoutPage() {
                     >
                       <CartItem
                         item={item}
-                        onUpdateQuantity={updateQuantity}
+                        onUpdateQuantity={handleUpdateQuantity}
                         onRemove={removeFromCart}
                         variant="checkout"
                         showRemove={true}
+                        disabled={updatingQuantity === item.id}
                       />
                     </motion.div>
                   ))}
@@ -235,6 +328,7 @@ export default function CheckoutPage() {
               className="p-6 space-y-1 flex-1 flex flex-col"
             >
               <div className="space-y-6 flex-1">
+                {/* Name Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="name"
@@ -248,12 +342,12 @@ export default function CheckoutPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    required
                     placeholder="আপনার পুরো নাম লিখুন"
                     className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/30 backdrop-blur-md text-stone-800 dark:text-stone-200 placeholder-stone-500/70 focus:outline-none focus:ring-2 focus:ring-[#BA68C8]/50 focus:border-transparent transition-all"
                   />
                 </div>
 
+                {/* Phone Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="phone"
@@ -267,12 +361,12 @@ export default function CheckoutPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    required
-                    placeholder="০১XXXXXXXXX"
+                    placeholder="০১XXXXXXXXX (শুধু সংখ্যা)"
                     className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/30 backdrop-blur-md text-stone-800 dark:text-stone-200 placeholder-stone-500/70 focus:outline-none focus:ring-2 focus:ring-[#BA68C8]/50 focus:border-transparent transition-all"
                   />
                 </div>
 
+                {/* Address Field – * চিহ্ন */}
                 <div>
                   <label
                     htmlFor="address"
@@ -285,7 +379,6 @@ export default function CheckoutPage() {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    required
                     rows={4}
                     placeholder="জেলা, থানা, গ্রাম/শহর, বাড়ি নম্বর, রাস্তার নাম"
                     className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/30 backdrop-blur-md text-stone-800 dark:text-stone-200 placeholder-stone-500/70 focus:outline-none focus:ring-2 focus:ring-[#BA68C8]/50 focus:border-transparent transition-all resize-none"
@@ -309,11 +402,15 @@ export default function CheckoutPage() {
                   variant="secondary"
                   size="lg"
                   fullWidth
-                  loading={loading}
-                  disabled={loading}
+                  loading={loading || checkingStock}
+                  disabled={loading || checkingStock}
                   className="mt-4"
                 >
-                  {loading ? "অর্ডার জমা হচ্ছে..." : "অর্ডার কনফার্ম করুন"}
+                  {checkingStock
+                    ? "স্টক যাচাই করা হচ্ছে..."
+                    : loading
+                      ? "অর্ডার জমা হচ্ছে..."
+                      : "অর্ডার কনফার্ম করুন"}
                 </Button>
 
                 <div className="text-center mt-4">

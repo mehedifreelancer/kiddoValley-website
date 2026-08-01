@@ -25,6 +25,8 @@ import VideoModalContent from "./VideoModalContent";
 import { getRelatedProducts, Product } from "@/app/products/product.service";
 import { useGlobal } from "@/app/contexts/GlobalContext";
 import ProductCard from "./ProductCard";
+import toast from "react-hot-toast";
+import { checkStockForAdd } from "@/app/lib/stockUtils";
 
 interface ProductDetailsProps {
   product: Product;
@@ -39,13 +41,13 @@ export default function ProductDetails({
   onVideoOpen,
   onVideoClose,
 }: ProductDetailsProps) {
-  const { addToCart, openCart } = useGlobal();
+  const { addToCart, openCart, cart } = useGlobal();
 
   const [quantity, setQuantity] = useState(1);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
-
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function ProductDetails({
         );
     }
   }, [product?.id]);
+
   // ===== ইউটিউব থাম্বনেইল ফাংশন =====
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
@@ -147,7 +150,6 @@ export default function ProductDetails({
   useEffect(() => {
     if (!product?.variants || product.variants.length === 0) return;
 
-    // প্রতিটি অ্যাট্রিবিউটের প্রথম উপলব্ধ মান নির্বাচন করি
     const defaultFilters: Record<string, string> = {};
     primaryAttributes.forEach((attr) => {
       if (attr.values.length > 0) {
@@ -156,7 +158,6 @@ export default function ProductDetails({
     });
     setSelectedValues(defaultFilters);
 
-    // যে ভেরিয়েন্ট সব ডিফল্ট মান মেলে তাকে সিলেক্ট করি
     const initialVariant = product.variants.find((v) =>
       Object.entries(defaultFilters).every(
         ([k, val]) => v.attributes?.[k] === val,
@@ -171,17 +172,15 @@ export default function ProductDetails({
     const priorityKeys = primaryAttributes.map((a) => a.key);
 
     priorityKeys.forEach((key, index) => {
-      // পূর্ববর্তী অ্যাট্রিবিউটগুলোর মান যাদের সাথে মেলে এমন ভেরিয়েন্ট খুঁজি
       const priorKeys = priorityKeys.slice(0, index);
       const matchingVariants = product.variants.filter((variant) => {
         return priorKeys.every((priorKey) => {
           const selectedVal = selectedValues[priorKey];
-          if (!selectedVal) return true; // যদি সিলেক্ট না হয় তাহলে সব পাস
+          if (!selectedVal) return true;
           return variant.attributes?.[priorKey] === selectedVal;
         });
       });
 
-      // এই অ্যাট্রিবিউটের জন্য ইউনিক মান সংগ্রহ করি
       const values = new Set<string>();
       matchingVariants.forEach((variant) => {
         const val = variant.attributes?.[key];
@@ -218,17 +217,14 @@ export default function ProductDetails({
       const currentIdx = priorityKeys.indexOf(key);
       if (currentIdx === -1) return;
 
-      // আপডেট করা অবজেক্ট
       const newSelected = { ...selectedValues, [key]: value };
 
-      // এই অ্যাট্রিবিউটের পরে সব মান রিসেট করি (নিম্ন অগ্রাধিকার)
       for (let i = currentIdx + 1; i < priorityKeys.length; i++) {
         delete newSelected[priorityKeys[i]];
       }
 
       setSelectedValues(newSelected);
 
-      // নতুন সিলেকশনের সাথে মেলে এমন ভেরিয়েন্ট খুঁজি
       const matched = product.variants.find((variant) =>
         Object.entries(newSelected).every(
           ([k, val]) => variant.attributes?.[k] === val,
@@ -277,36 +273,58 @@ export default function ProductDetails({
       "out of stock": "স্টক শেষ",
     }[displayInStock] || displayInStock;
 
-  // ---- কার্টে যোগ ----
-  // ProductDetails.tsx - handleAddToCart ফাংশন
-
-  const handleAddToCart = useCallback(() => {
+  // ---- কার্টে যোগ (কমন ইউটিলিটি ব্যবহার করে) ----
+  const handleAddToCart = async () => {
     if (!currentVariant) {
       toast.error("কোনো ভেরিয়েন্ট সিলেক্ট করা নেই");
       return;
     }
 
-    // ✅ stockId বের করুন (currentVariant-এ stockId থাকবে)
     const stockId = currentVariant.stockId;
     if (!stockId) {
       toast.error("এই ভেরিয়েন্টের জন্য স্টক আইডি পাওয়া যায়নি");
       return;
     }
 
-    const uniqueId = `${product.id}-${currentVariant.sku}`;
-    addToCart({
-      id: uniqueId,
-      name: product.name,
-      price: displayPrice,
-      stockId: stockId, // ✅ সঠিক stockId
-      imageUrl:
-        currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
-      sku: currentVariant.sku,
-      variant: currentVariant,
-      quantity: quantity,
-    });
-    openCart();
-  }, [currentVariant, product, displayPrice, addToCart, openCart, quantity]);
+    setIsAddingToCart(true);
+    try {
+      // ✅ কমন ফাংশন ব্যবহার করুন
+      const stockInfo = await checkStockForAdd(stockId, quantity, cart);
+
+      if (!stockInfo.available) {
+        if (stockInfo.currentQty === 0) {
+          toast.error(`"${stockInfo.productName}" - স্টক শেষ!`);
+        } else {
+          toast.error(
+            `"${stockInfo.productName}" - শুধুমাত্র ${stockInfo.currentQty}টি স্টকে আছে! (আপনি চাচ্ছেন ${quantity}টি)`,
+          );
+        }
+        setIsAddingToCart(false);
+        return;
+      }
+
+      // স্টক থাকলে কার্টে যোগ করুন
+      const uniqueId = `${product.id}-${currentVariant.sku}`;
+      addToCart({
+        id: uniqueId,
+        name: product.name,
+        price: displayPrice,
+        stockId: stockId,
+        imageUrl:
+          currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
+        sku: currentVariant.sku,
+        variant: currentVariant,
+        quantity: quantity,
+      });
+      openCart();
+      toast.success(`"${product.name}" কার্টে যোগ করা হয়েছে`);
+    } catch (error: any) {
+      console.error("Stock check error:", error);
+      toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   const handleIncrement = useCallback(() => setQuantity((q) => q + 1), []);
   const handleDecrement = useCallback(
@@ -589,7 +607,8 @@ export default function ProductDetails({
               size="sm"
               icon={<ShoppingCart size={18} />}
               onClick={handleAddToCart}
-              disabled={displayInStock === "out of stock"}
+              disabled={displayInStock === "out of stock" || isAddingToCart}
+              loading={isAddingToCart}
               className="flex-1"
             >
               {displayInStock === "out of stock"
@@ -618,7 +637,7 @@ export default function ProductDetails({
         </div>
       </div>
 
-      {/* ===== ভিডিও মডাল – শুধু ডিটেইল পেজে ===== */}
+      {/* ===== ভিডিও মডাল ===== */}
       {!showIngInModal && isVideoModalOpen && product.videoUrl && (
         <Modal
           isOpen={isVideoModalOpen}
@@ -635,7 +654,6 @@ export default function ProductDetails({
         </Modal>
       )}
 
-      {/* Related Products Section */}
       {/* ===== Related Products Section ===== */}
       {!showIngInModal && relatedProducts.length > 0 && (
         <div className="mt-12 pt-8 border-t border-stone-200 dark:border-dark-border">

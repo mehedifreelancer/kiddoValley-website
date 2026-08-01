@@ -10,7 +10,10 @@ import Modal from "./Modal";
 import VideoModalContent from "./VideoModalContent";
 import { useGlobal } from "@/app/contexts/GlobalContext";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { checkStockForAdd } from "@/app/lib/stockUtils";
 
+// ===== Types =====
 interface Variant {
   id: number;
   sku: string;
@@ -47,6 +50,7 @@ interface ProductCardProps {
   showButtons?: boolean;
 }
 
+// ===== Main Component =====
 export default function ProductCard({
   product,
   onAddToCart,
@@ -54,9 +58,11 @@ export default function ProductCard({
   showButtons = true,
 }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { cart, addToCart, openCart } = useGlobal();
   const router = useRouter();
 
+  // ---- Primary attribute ----
   const primaryAttribute = useMemo(() => {
     if (
       product.attributeOrderByPriority &&
@@ -70,6 +76,7 @@ export default function ProductCard({
   const primaryKey = primaryAttribute?.key || null;
   const variantBadges = primaryAttribute?.values || [];
 
+  // ---- Default variant ----
   const getDefaultVariant = (): Variant | null => {
     if (!product.variants || product.variants.length === 0) return null;
     let candidate = product.variants.find(
@@ -94,6 +101,7 @@ export default function ProductCard({
   );
   const currentVariant = selectedVariant ?? defaultVariant;
 
+  // ---- Variant label ----
   const getVariantLabel = (variant: Variant | null): string => {
     if (!variant || !primaryKey) return "";
     const value = variant.attributes?.[primaryKey];
@@ -102,6 +110,7 @@ export default function ProductCard({
 
   const variantLabel = getVariantLabel(currentVariant);
 
+  // ---- Badge logic ----
   const calculateActiveBadgeIndex = (
     variant: Variant | null,
   ): number | null => {
@@ -137,18 +146,14 @@ export default function ProductCard({
     }
   }, [selectedVariant, variantBadges, primaryAttribute]);
 
-  // ✅ আপডেটেড handleBadgeClick – স্টকওয়ালা ভেরিয়েন্টকে প্রাধান্য দেয়
   const handleBadgeClick = (badgeValue: string, idx: number) => {
     if (!primaryKey) return;
 
-    // ১. প্রথমে স্টকওয়ালা ভেরিয়েন্ট খুঁজি
     let matched = product.variants.find(
       (v) =>
         v.attributes?.[primaryKey] === badgeValue &&
         (v.inStock === "in stock" || v.inStock === "less than 5"),
     );
-
-    // ২. স্টকওয়ালা না পেলে যেকোনো ম্যাচিং ভেরিয়েন্ট
     if (!matched) {
       matched = product.variants.find(
         (v) => v.attributes?.[primaryKey] === badgeValue,
@@ -165,6 +170,7 @@ export default function ProductCard({
     }
   };
 
+  // ---- Price & stock ----
   const displayPrice = currentVariant?.price ?? 0;
   const displayDiscount = currentVariant?.discount ?? 0;
   const displayImage =
@@ -193,59 +199,74 @@ export default function ProductCard({
       "out of stock": "স্টক শেষ",
     }[displayInStock] || displayInStock;
 
+  // ---- Video modal ----
   const handleViewVideo = () => {
     if (!product.videoUrl) return;
     setIsModalOpen(true);
   };
   const handleCloseModal = () => setIsModalOpen(false);
 
-  // ProductCard.tsx - handleAddToCart ফাংশনটি নিচের মতো আপডেট করুন
-
-  const handleAddToCart = () => {
-    // ✅ currentVariant থেকে stockId নিন
+  // ---- Add to Cart with stock check (using common utility) ----
+  const handleAddToCart = async () => {
     const stockId = currentVariant?.stockId;
     if (!stockId) {
-      console.error("❌ stockId missing for variant:", currentVariant);
-      // ফ্যালব্যাক: product.variants থেকে প্রথম স্টক আইডি খুঁজুন (যদি currentVariant না থাকে)
       const fallback = product.variants?.find((v) => v.stockId)?.stockId;
       if (!fallback) {
         toast.error("স্টক আইডি পাওয়া যায়নি");
         return;
       }
-      // fallback ব্যবহার করুন
-      addToCart({
-        id: String(product.id),
-        name: product.name,
-        stockId: fallback,
-        price: displayPrice,
-        imageUrl: displayImage,
-        author: product.category?.name || "",
-        quantity: 1,
-      });
-      openCart();
+      await addToCartWithStockCheck(fallback, 1);
       return;
     }
-
-    // ✅ সঠিক stockId সহ কার্টে যোগ করুন
-    const uniqueId = `${product.id}-${currentVariant.sku}`;
-    addToCart({
-      id: uniqueId,
-      name: product.name,
-      price: displayPrice,
-      stockId: stockId,
-      imageUrl: displayImage,
-      sku: currentVariant.sku,
-      variant: currentVariant,
-      quantity: 1,
-    });
-    openCart();
+    await addToCartWithStockCheck(stockId, 1);
   };
-  const handleDetails = () => {
-    window.location.href = `/products/${product.slug}`;
+
+  const addToCartWithStockCheck = async (
+    stockId: number,
+    quantityToAdd: number = 1,
+  ) => {
+    setIsAddingToCart(true);
+    try {
+      // ✅ কমন ফাংশন ব্যবহার করুন
+      const stockInfo = await checkStockForAdd(stockId, quantityToAdd, cart);
+
+      if (!stockInfo.available) {
+        if (stockInfo.currentQty === 0) {
+          toast.error(`"${stockInfo.productName}" - স্টক শেষ!`);
+        } else {
+          toast.error(
+            `"${stockInfo.productName}" - শুধুমাত্র ${stockInfo.currentQty}টি স্টকে আছে! (আপনি চাচ্ছেন ${stockInfo.currentQty + 1}টি)`,
+          );
+        }
+        setIsAddingToCart(false);
+        return;
+      }
+
+      // স্টক থাকলে কার্টে যোগ করুন
+      const uniqueId = `${product.id}-${currentVariant?.sku || "default"}`;
+      addToCart({
+        id: uniqueId,
+        name: product.name,
+        price: displayPrice,
+        stockId: stockId,
+        imageUrl: displayImage,
+        sku: currentVariant?.sku,
+        variant: currentVariant,
+        quantity: quantityToAdd,
+      });
+      openCart();
+      toast.success(`"${product.name}" কার্টে যোগ করা হয়েছে`);
+    } catch (error: any) {
+      console.error("Stock check error:", error);
+      toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const totalVariants = product.variants?.length || 0;
 
+  // ---- Render ----
   return (
     <>
       <motion.div
@@ -254,6 +275,7 @@ export default function ProductCard({
         transition={{ duration: 0.3 }}
         className="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm hover:shadow-xl border border-stone-200/60 dark:border-dark-border/60 overflow-hidden transition-all duration-300 h-full flex flex-col mx-auto w-full"
       >
+        {/* Image & badges */}
         <div className="relative flex-shrink-0 bg-gradient-to-br from-rose-50/50 to-purple-50/50 dark:from-dark-surface/80 dark:to-dark-surface/60">
           <Link
             href={`/products/${product.slug}`}
@@ -295,6 +317,7 @@ export default function ProductCard({
           </div>
         </div>
 
+        {/* Variant info */}
         {totalVariants > 0 && (
           <div className="p-3 pb-2 border-b border-stone-100 dark:border-dark-border/50">
             <div className="flex items-center justify-between">
@@ -318,6 +341,7 @@ export default function ProductCard({
           </div>
         )}
 
+        {/* Content */}
         <div className="flex flex-col flex-grow">
           <div className="px-3 pb-4">
             <Link href={`/products/${product.slug}`}>
@@ -379,6 +403,7 @@ export default function ProductCard({
             </div>
           </div>
 
+          {/* Buttons */}
           {showButtons && (
             <div className="px-3 pb-4 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-2">
               <Button
@@ -387,7 +412,8 @@ export default function ProductCard({
                 icon={<ShoppingCart size={16} />}
                 onClick={handleAddToCart}
                 className="w-full"
-                disabled={displayInStock === "out of stock"}
+                disabled={displayInStock === "out of stock" || isAddingToCart}
+                loading={isAddingToCart}
               >
                 {displayInStock === "out of stock" ? "স্টক শেষ" : "কার্ট"}
               </Button>
@@ -407,6 +433,7 @@ export default function ProductCard({
         </div>
       </motion.div>
 
+      {/* Video Modal */}
       {isModalOpen && product.videoUrl && (
         <Modal
           title={`${product.name} – ভিডিও প্রিভিউ`}
