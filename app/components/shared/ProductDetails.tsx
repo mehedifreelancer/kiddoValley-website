@@ -22,8 +22,9 @@ import "swiper/css/thumbs";
 import Button from "./Button";
 import Modal from "./Modal";
 import VideoModalContent from "./VideoModalContent";
-import { Product } from "@/app/products/product.service";
+import { getRelatedProducts, Product } from "@/app/products/product.service";
 import { useGlobal } from "@/app/contexts/GlobalContext";
+import ProductCard from "./ProductCard";
 
 interface ProductDetailsProps {
   product: Product;
@@ -45,6 +46,17 @@ export default function ProductDetails({
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
 
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (product?.id) {
+      getRelatedProducts(product.id)
+        .then(setRelatedProducts)
+        .catch((err) =>
+          console.error("Failed to fetch related products:", err),
+        );
+    }
+  }, [product?.id]);
   // ===== ইউটিউব থাম্বনেইল ফাংশন =====
   const getYouTubeThumbnail = (url: string) => {
     if (!url) return null;
@@ -621,6 +633,34 @@ export default function ProductDetails({
             isOpen={isVideoModalOpen}
           />
         </Modal>
+      )}
+
+      {/* Related Products Section */}
+      {/* ===== Related Products Section ===== */}
+      {!showIngInModal && relatedProducts.length > 0 && (
+        <div className="mt-12 pt-8 border-t border-stone-200 dark:border-dark-border">
+          <h3 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-6">
+            সম্পর্কিত পণ্য
+          </h3>
+          <Swiper
+            spaceBetween={16}
+            slidesPerView={2}
+            navigation
+            modules={[Navigation]}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              768: { slidesPerView: 3 },
+              1024: { slidesPerView: 4 },
+            }}
+            className="related-products-swiper"
+          >
+            {relatedProducts.map((prod) => (
+              <SwiperSlide key={prod.id}>
+                <ProductCard product={prod} showButtons={true} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
       )}
     </>
   );

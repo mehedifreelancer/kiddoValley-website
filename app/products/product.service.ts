@@ -49,3 +49,12 @@ export const getProductBySlug = async (slug: string): Promise<Product> => {
   const response = await apiClient<{ success: boolean; data: Product }>(url);
   return response.data;
 };
+// Add this function
+export const getRelatedProducts = async (
+  productId: number,
+): Promise<Product[]> => {
+  const response = await apiClient<{ success: boolean; data: Product[] }>(
+    `/public/products/related/${productId}`,
+  );
+  return response.data;
+};

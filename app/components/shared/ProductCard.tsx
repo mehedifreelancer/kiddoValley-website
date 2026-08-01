@@ -9,6 +9,7 @@ import Button from "./Button";
 import Modal from "./Modal";
 import VideoModalContent from "./VideoModalContent";
 import { useGlobal } from "@/app/contexts/GlobalContext";
+import { useRouter } from "next/navigation";
 
 interface Variant {
   id: number;
@@ -54,6 +55,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { cart, addToCart, openCart } = useGlobal();
+  const router = useRouter();
 
   const primaryAttribute = useMemo(() => {
     if (
@@ -408,9 +410,10 @@ export default function ProductCard({
       {isModalOpen && product.videoUrl && (
         <Modal
           title={`${product.name} – ভিডিও প্রিভিউ`}
-          size="xl"
+          size="4xl"
           onClose={handleCloseModal}
           isOpen={isModalOpen}
+          disableScrollLock={true}
         >
           <VideoModalContent videoUrl={product.videoUrl} title={product.name} />
         </Modal>
