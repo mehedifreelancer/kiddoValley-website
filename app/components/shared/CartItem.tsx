@@ -23,17 +23,24 @@ export default function CartItem({
   variant = "sidebar",
   showRemove = true,
 }: CartItemProps) {
-  // ===== ভ্যারিয়েন্টের অ্যাট্রিবিউট থেকে ডিটেইল বের করা =====
+  // ===== ভ্যারিয়েন্টের অ্যাট্রিবিউট থেকে ডিটেইল বের করা =====
   const getVariantDetails = (): string => {
     if (!item.variant?.attributes) return "";
     const attrs = item.variant.attributes;
-    // সব ভ্যালুকে কমা দিয়ে আলাদা করি
+    // সব ভ্যালুকে কমা দিয়ে আলাদা করি
     return Object.values(attrs).filter(Boolean).join(", ");
   };
 
   const variantDetails = getVariantDetails();
 
   const isSidebar = variant === "sidebar";
+
+  // 🆕 discount আছে কিনা check করো
+  const hasDiscount =
+    !!item.discountPercent &&
+    item.discountPercent > 0 &&
+    !!item.originalPrice &&
+    item.originalPrice > item.price;
 
   return (
     <div
@@ -59,6 +66,12 @@ export default function CartItem({
             📖
           </div>
         )}
+        {/* 🆕 ছোট discount badge, image এর কোণায় */}
+        {hasDiscount && (
+          <span className="absolute top-1 left-1 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
+            -{item.discountPercent}%
+          </span>
+        )}
       </Link>
 
       {/* তথ্য */}
@@ -71,10 +84,26 @@ export default function CartItem({
           <h4 className="text-sm font-medium text-stone-800 dark:text-stone-200 truncate">
             {item.name}
           </h4>
-          {/* ✅ ভ্যারিয়েন্ট ডিটেইল – ছোট আকারে */}
+          {/* ✅ ভ্যারিয়েন্ট ডিটেইল – ছোট আকারে */}
           {variantDetails && (
             <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
               {variantDetails}
+            </p>
+          )}
+
+          {/* 🆕 প্রতি ইউনিট প্রাইস — discount থাকলে original strikethrough + discounted highlight */}
+          {hasDiscount ? (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-stone-400 dark:text-stone-500 line-through">
+                ৳{item.originalPrice!.toFixed(2)}
+              </span>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                ৳{item.price.toFixed(2)}
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+              ৳{item.price.toFixed(2)}
             </p>
           )}
         </Link>
@@ -119,3 +148,4 @@ export default function CartItem({
     </div>
   );
 }
+  

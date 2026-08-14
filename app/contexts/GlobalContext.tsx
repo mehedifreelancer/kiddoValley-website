@@ -12,9 +12,12 @@ import React, {
 export interface CartItem {
   id: string;
   name: string;
-  price: number;
+  price: number; // discounted/final price — billing এর জন্য এটাই ব্যবহার হবে
+  originalPrice?: number; // 🆕 discount না থাকলে undefined, থাকলে original MRP
+  discountPercent?: number; // 🆕 UI badge এর জন্য
   quantity: number;
   stockId: number;
+  weight: number;
   imageUrl?: string;
   sku?: string;
   variant?: any;
@@ -140,12 +143,20 @@ export function GlobalProvider({
   const addToCart = (
     item: Omit<CartItem, "quantity"> & { quantity?: number },
   ) => {
+    console.log("🔍 addToCart called with item:", item);
+    console.log("🔍 item.weight:", item.weight); // ডিবাগ: দেখুন weight আসছে কিনা
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       const qty = item.quantity || 1;
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
+          i.id === item.id
+            ? {
+                ...i,
+                quantity: i.quantity + qty,
+                weight: item.weight ?? i.weight,
+              }
+            : i,
         );
       }
       return [
@@ -154,12 +165,12 @@ export function GlobalProvider({
           ...item,
           quantity: qty,
           imageUrl: item.imageUrl || "",
+          weight: item.weight ?? 0, // ✅ ডিফল্ট ০
         },
       ];
     });
     setIsCartOpen(true);
   };
-
   const removeFromCart = (id: string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };

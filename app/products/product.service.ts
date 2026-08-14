@@ -11,6 +11,7 @@ export interface Product {
   description: string | null;
   videoUrl: string | null;
   images: { imgUrl: string }[];
+  weight: number;
   isForceOrder: boolean;
   forceOrderPriority: number;
   isPublished: boolean;

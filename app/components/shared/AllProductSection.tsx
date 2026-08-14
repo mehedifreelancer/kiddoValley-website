@@ -26,6 +26,7 @@ const mapProductToBook = (product: Product): any => {
       variants: [],
       attributeOrderByPriority: [],
       thumbnailImage: "/placeholder.jpg",
+      weight: 0, // 🆕 এখানে যোগ করুন (ডিফল্ট)
       isForceOrder: false,
       forceOrderPriority: 0,
       isPublished: false,
@@ -51,9 +52,10 @@ const mapProductToBook = (product: Product): any => {
     rating: 4.5,
     videoUrl: product.videoUrl || null,
     inStock: defaultInStock,
-    variants: product.variants || [], // ✅ এখন attributes আছে
+    variants: product.variants || [],
     attributeOrderByPriority: product.attributeOrderByPriority || [],
     thumbnailImage: product.thumbnailImage || "/placeholder.jpg",
+    weight: product.weight ?? 0.5, // 🆕 এই লাইনটা যোগ করুন
     categoryObj: product.category,
     isForceOrder: product.isForceOrder,
     forceOrderPriority: product.forceOrderPriority,

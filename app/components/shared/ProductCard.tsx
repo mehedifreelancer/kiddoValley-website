@@ -33,6 +33,7 @@ interface Product {
   description?: string;
   videoUrl?: string | null;
   thumbnailImage: string | null;
+  weight: number;
   variants: Variant[];
   attributeOrderByPriority?: Array<{ key: string; values: string[] }>;
   isForceOrder: boolean;
@@ -244,14 +245,22 @@ export default function ProductCard({
 
       // স্টক থাকলে কার্টে যোগ করুন
       const uniqueId = `${product.id}-${currentVariant?.sku || "default"}`;
+      console.log("🟢 [Component] product.weight:", product.weight);
+      console.log(
+        "🟢 [Component] Full product (stringified):",
+        JSON.stringify(product, null, 2),
+      );
       addToCart({
         id: uniqueId,
         name: product.name,
-        price: displayPrice,
+        price: discountedPrice, // 🔧 FIX: discount count করা price, billing/cartTotal এ এটাই ব্যবহার হবে
+        originalPrice: displayPrice, // 🆕 UI তে strikethrough দেখানোর জন্য
+        discountPercent: displayDiscount, // 🆕 UI তে "-X% ছাড়" badge দেখানোর জন্য
         stockId: stockId,
         imageUrl: displayImage,
         sku: currentVariant?.sku,
         variant: currentVariant,
+        weight: product.weight,
         quantity: quantityToAdd,
       });
       openCart();

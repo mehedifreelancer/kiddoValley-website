@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,12 @@ import Button from "../components/shared/Button";
 import CartItem from "../components/shared/CartItem";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { placeOrder } from "./checkout.service";
+import {
+  placeOrder,
+  calculateDeliveryCharge,
+  detectLocationFromAddress,
+  LocationType,
+} from "./checkout.service";
 import { checkBulkStock } from "../services/cart.service";
 import { checkoutSchema } from "./checkout.schema";
 import { checkStockForAdd, getUnavailableItemsList } from "../lib/stockUtils";
@@ -37,10 +42,32 @@ export default function CheckoutPage() {
   const [checkingStock, setCheckingStock] = useState(false);
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
 
-  const deliveryCharge = 60;
+  // 🆕 Delivery location + charge (dynamic, hardcoded 60 বাদ)
+  const [location, setLocation] = useState<LocationType | null>(null);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
+  const [deliveryChargeLoading, setDeliveryChargeLoading] = useState(false);
+  const [deliveryDiscountPercent, setDeliveryDiscountPercent] =
+    useState<number>(0);
+
+  const addressDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const lastDetectedAddress = useRef<string>("");
+
+  // 🆕 weight cart item এ real field (ProductCard.tsx এ আগেই fix করা হয়েছে)
+  const totalWeight = cart.reduce(
+    (sum, item) => sum + (item.weight || 0) * item.quantity,
+    0,
+  );
+
   const grandTotal = cartTotal + deliveryCharge;
 
-  // ✅ মাউন্ট হলে localStorage থেকে my-info পড়ুন
+  const LOCATION_LABEL: Record<LocationType, string> = {
+    inside_dhaka: "ঢাকার ভিতরে",
+    suburbs: "সাবার্বস",
+    outside_dhaka: "ঢাকার বাইরে",
+  };
+
+  // ✅ মাউন্ট হলে localStorage থেকে my-info পড়ুন
   useEffect(() => {
     try {
       const stored = localStorage.getItem("my-info");
@@ -57,14 +84,72 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // 🆕 location detect হলে বা cart change হলে delivery charge recalculate
+  useEffect(() => {
+    const updateDeliveryCharge = async () => {
+      if (!location || cart.length === 0) {
+        setDeliveryCharge(0);
+        setDeliveryDiscountPercent(0);
+        return;
+      }
+      setDeliveryChargeLoading(true);
+      try {
+        const result = await calculateDeliveryCharge({
+          location,
+          weight: totalWeight,
+          productPrice: cartTotal,
+          isCod: true,
+        });
+        setDeliveryCharge(result.totalCharge || 0);
+        setDeliveryDiscountPercent(result.discountPercent || 0);
+      } catch (error: any) {
+        console.error("Failed to calculate delivery charge:", error);
+        toast.error(error.message || "ডেলিভারি চার্জ হিসাব করতে সমস্যা হয়েছে");
+        setDeliveryCharge(0);
+        setDeliveryDiscountPercent(0);
+      } finally {
+        setDeliveryChargeLoading(false);
+      }
+    };
+
+    updateDeliveryCharge();
+  }, [location, cart, cartTotal, totalWeight]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // 🆕 address field হলে debounce করে location detect করো
+    if (name === "address") {
+      if (addressDebounceTimeout.current) {
+        clearTimeout(addressDebounceTimeout.current);
+      }
+
+      const trimmed = value.trim();
+      if (trimmed.length < 8) {
+        setLocation(null);
+        return;
+      }
+      if (trimmed === lastDetectedAddress.current) return;
+
+      addressDebounceTimeout.current = setTimeout(async () => {
+        setDetectingLocation(true);
+        try {
+          const detected = await detectLocationFromAddress(trimmed);
+          lastDetectedAddress.current = trimmed;
+          setLocation(detected);
+        } catch (error: any) {
+          console.error("Location detect error:", error);
+        } finally {
+          setDetectingLocation(false);
+        }
+      }, 600);
+    }
   };
 
-  // ✅ কোয়ান্টিটি আপডেট (একই লজিক)
+  // ✅ কোয়ান্টিটি আপডেট (একই লজিক)
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     const existingItem = cart.find((item) => item.id === itemId);
     if (!existingItem) return;
@@ -76,7 +161,7 @@ export default function CheckoutPage() {
 
     const stockId = existingItem.stockId;
     if (!stockId) {
-      toast.error("স্টক আইডি পাওয়া যায়নি");
+      toast.error("স্টক আইডি পাওয়া যায়নি");
       return;
     }
 
@@ -98,7 +183,7 @@ export default function CheckoutPage() {
         return;
       }
       globalUpdateQuantity(itemId, newQuantity);
-      toast.success(`"${existingItem.name}" - কোয়ান্টিটি আপডেট করা হয়েছে`);
+      toast.success(`"${existingItem.name}" - কোয়ান্টিটি আপডেট করা হয়েছে`);
     } catch (error: any) {
       toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
     } finally {
@@ -124,6 +209,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    // 🆕 location detect না হলে submit করতে দিও না
+    if (!location) {
+      toast.error("দয়া করে সঠিক ঠিকানা লিখুন, ডেলিভারি এলাকা শনাক্ত করা যায়নি");
+      return;
+    }
+
     // stockId প্রস্তুত
     const stockItems = cart.map((item) => {
       let stockId = item.stockId;
@@ -143,7 +234,7 @@ export default function CheckoutPage() {
     const hasInvalidStock = stockItems.some((item) => item.stockId === 0);
     if (hasInvalidStock) {
       toast.error(
-        "কিছু পণ্যের স্টক আইডি পাওয়া যায়নি। দয়া করে পণ্যগুলো আবার যোগ করুন।",
+        "কিছু পণ্যের স্টক আইডি পাওয়া যায়নি। দয়া করে পণ্যগুলো আবার যোগ করুন।",
       );
       console.error("Invalid stockId in items:", stockItems);
       return;
@@ -206,6 +297,9 @@ export default function CheckoutPage() {
         subtotal: cartTotal,
         discountTotal: 0,
         total: grandTotal,
+        location, // 🆕
+        deliveryCharge, // 🆕
+        weight: totalWeight
       };
 
       console.log("📦 Sending order payload:", payload);
@@ -323,10 +417,18 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-stone-700 dark:text-stone-300 flex items-center gap-1">
-                    <Truck size={14} /> ডেলিভারি চার্জ:
+                    <Truck size={14} /> ডেলিভারি চার্জ
+                    {deliveryDiscountPercent > 0 && (
+                      <span className="text-xs text-green-600">
+                        ({deliveryDiscountPercent}% ছাড়)
+                      </span>
+                    )}
+                    :
                   </span>
                   <span className="font-medium text-stone-800 dark:text-stone-200">
-                    ৳{deliveryCharge.toFixed(2)}
+                    {deliveryChargeLoading
+                      ? "..."
+                      : `৳${deliveryCharge.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="border-t border-white/30 dark:border-white/10 pt-2 mt-2">
@@ -401,6 +503,16 @@ export default function CheckoutPage() {
                     className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2"
                   >
                     সম্পূর্ণ ঠিকানা <span className="text-[#E57373]">*</span>
+                    {detectingLocation && (
+                      <span className="text-xs text-stone-400 ml-2">
+                        এলাকা শনাক্ত করা হচ্ছে...
+                      </span>
+                    )}
+                    {location && !detectingLocation && (
+                      <span className="text-xs text-green-600 ml-2">
+                        ✓ {LOCATION_LABEL[location]}
+                      </span>
+                    )}
                   </label>
                   <textarea
                     id="address"

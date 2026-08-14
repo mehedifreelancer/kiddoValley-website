@@ -28,6 +28,8 @@ import ProductCard from "./ProductCard";
 import toast from "react-hot-toast";
 import { checkStockForAdd } from "@/app/lib/stockUtils";
 
+
+
 interface ProductDetailsProps {
   product: Product;
   showIngInModal: boolean;
@@ -134,7 +136,7 @@ export default function ProductDetails({
   // ===== অ্যাট্রিবিউট =====
   const primaryAttributes = product?.attributeOrderByPriority || [];
 
-  // ---- ডিফল্ট ভেরিয়েন্ট (শুধু পতনের জন্য) ----
+  // ---- ডিফল্ট ভেরিয়েন্ট (শুধু পতনের জন্য) ----
   const defaultVariant = useMemo(() => {
     if (!product?.variants || product.variants.length === 0) return null;
     return (
@@ -148,7 +150,7 @@ export default function ProductDetails({
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>(
     {},
   );
-  // ---- অবস্থা: ম্যাচিং ভেরিয়েন্ট ----
+  // ---- অবস্থা: ম্যাচিং ভেরিয়েন্ট ----
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   // ---- প্রাথমিক মান সেট করা ----
@@ -199,7 +201,7 @@ export default function ProductDetails({
     return map;
   }, [primaryAttributes, product.variants, selectedValues]);
 
-  // ---- সিলেক্টেড ভ্যালু অনুযায়ী ম্যাচিং ভেরিয়েন্ট (রিয়েল টাইম) ----
+  // ---- সিলেক্টেড ভ্যালু অনুযায়ী ম্যাচিং ভেরিয়েন্ট (রিয়েল টাইম) ----
   const matchingVariant = useMemo(() => {
     const selectedKeys = Object.keys(selectedValues).filter(
       (k) => selectedValues[k],
@@ -240,7 +242,7 @@ export default function ProductDetails({
     [primaryAttributes, product.variants, selectedValues],
   );
 
-  // ---- কারেন্ট ভেরিয়েন্ট (ম্যাচিং অথবা ডিফল্ট) ----
+  // ---- কারেন্ট ভেরিয়েন্ট (ম্যাচিং অথবা ডিফল্ট) ----
   const currentVariant = selectedVariant || defaultVariant;
 
   // ---- প্রাইমারি কী (কার্ট লেবেলের জন্য) ----
@@ -254,6 +256,8 @@ export default function ProductDetails({
   // ---- মূল্য ও স্টক ----
   const displayPrice = currentVariant?.price ?? 0;
   const displayDiscount = currentVariant?.discount ?? 0;
+  const displayImage =
+    currentVariant?.imgUrl || product.thumbnailImage || "/placeholder.jpg"; // ✅ যোগ করা হলো
   const displayInStock = currentVariant?.inStock || "out of stock";
   const discountedPrice =
     displayDiscount > 0
@@ -281,13 +285,13 @@ export default function ProductDetails({
   // ---- কার্টে যোগ (কমন ইউটিলিটি ব্যবহার করে) ----
   const handleAddToCart = async () => {
     if (!currentVariant) {
-      toast.error("কোনো ভেরিয়েন্ট সিলেক্ট করা নেই");
+      toast.error("কোনো ভেরিয়েন্ট সিলেক্ট করা নেই");
       return;
     }
 
     const stockId = currentVariant.stockId;
     if (!stockId) {
-      toast.error("এই ভেরিয়েন্টের জন্য স্টক আইডি পাওয়া যায়নি");
+      toast.error("এই ভেরিয়েন্টের জন্য স্টক আইডি পাওয়া যায়নি");
       return;
     }
 
@@ -311,13 +315,15 @@ export default function ProductDetails({
       addToCart({
         id: uniqueId,
         name: product.name,
-        price: displayPrice,
+        price: discountedPrice, // 🔧 FIX: discount count করা price, billing/cartTotal এ এটাই ব্যবহার হবে
+        originalPrice: displayPrice, // 🆕 UI তে strikethrough দেখানোর জন্য
+        discountPercent: displayDiscount, // 🆕 UI তে "-X% ছাড়" badge দেখানোর জন্য
         stockId: stockId,
-        imageUrl:
-          currentVariant.imgUrl || product.thumbnailImage || "/placeholder.jpg",
-        sku: currentVariant.sku,
+        imageUrl: displayImage,
+        sku: currentVariant?.sku,
         variant: currentVariant,
-        quantity: quantity,
+        weight: product.weight,
+        quantity: quantity, // ✅ FIX: quantityToAdd (undefined ছিল) এর বদলে quantity
       });
       openCart();
       toast.success(`"${product.name}" কার্টে যোগ করা হয়েছে`);
@@ -354,7 +360,7 @@ export default function ProductDetails({
     }
   }, [thumbSwiper]);
 
-  // ---- যখন ভেরিয়েন্ট পরিবর্তিত হয়, মেইন স্লাইডার আপডেট করি ----
+  // ---- যখন ভেরিয়েন্ট পরিবর্তিত হয়, মেইন স্লাইডার আপডেট করি ----
   useEffect(() => {
     if (!currentVariant || !mainSwiperRef.current) return;
     const imgUrl = currentVariant.imgUrl || product.thumbnailImage;
@@ -572,7 +578,7 @@ export default function ProductDetails({
                     ৳{displayPrice.toFixed(2)}
                   </del>
                   <span className="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
-                    {displayDiscount}% ছাড়
+                    {displayDiscount}% ছাড়
                   </span>
                 </>
               )}
