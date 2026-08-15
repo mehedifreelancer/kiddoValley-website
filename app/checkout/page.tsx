@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, Truck, Wallet } from "lucide-react";
+import { ShoppingBag, Truck, Wallet, MapPin, Sparkles } from "lucide-react";
 import { useGlobal } from "../contexts/GlobalContext";
 import Button from "../components/shared/Button";
 import CartItem from "../components/shared/CartItem";
@@ -42,52 +41,120 @@ export default function CheckoutPage() {
   const [checkingStock, setCheckingStock] = useState(false);
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
 
-  // 🆕 Delivery location + charge (dynamic, hardcoded 60 বাদ)
-  const [location, setLocation] = useState<LocationType | null>(null);
-  const [detectingLocation, setDetectingLocation] = useState(false);
+  // 🆕 Location state: তিনটা option + null (no selection) — LocationType-এর
+  // সাথে হুবহু মিলে যায়, তাই আর আলাদা mapping দরকার নেই
+  type LocationOption = LocationType;
+  const [locationOption, setLocationOption] = useState<LocationOption | null>(
+    null,
+  );
+
+  // For AI detection status
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState<LocationType | null>(
+    null,
+  );
+
+  // Delivery charge
   const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
   const [deliveryChargeLoading, setDeliveryChargeLoading] = useState(false);
   const [deliveryDiscountPercent, setDeliveryDiscountPercent] =
     useState<number>(0);
 
-  const addressDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const lastDetectedAddress = useRef<string>("");
+  // ✅ ফাইনাল সাবমিট-টাইম ভ্যালিডেশন চলাকালীন loading state
+  const [validatingLocation, setValidatingLocation] = useState(false);
 
-  // 🆕 weight cart item এ real field (ProductCard.tsx এ আগেই fix করা হয়েছে)
+  // ✅ address পরিবর্তন ট্র্যাক করার জন্য — এই ref-এর সাথে তুলনা করে বোঝা হয়
+  // address সত্যিই বদলেছে কিনা (radio reset করা উচিত কিনা তার জন্য)
+  const prevAddressRef = useRef<string>("");
+
+  // ✅ localStorage থেকে address+location একসাথে restore করার সময় radio
+  // reset effect যেন ভুল করে সেটা reset না করে দেয় — সেই একবারের জন্য
+  // reset skip করার flag
+  const skipNextAddressReset = useRef<boolean>(false);
+
+  // totalWeight from cart
   const totalWeight = cart.reduce(
     (sum, item) => sum + (item.weight || 0) * item.quantity,
     0,
   );
 
+  const effectiveLocation = locationOption; // locationOption: inside_dhaka | suburbs | outside_dhaka | null
   const grandTotal = cartTotal + deliveryCharge;
 
+  // ✅ radio-তে যা লেখা আছে ("সাব ঢাকা"), warning message-এও ঠিক সেই একই
+  // শব্দ ব্যবহার করা হয় — আগে এখানে "সাবার্বস" লেখা ছিল যেটা radio-র
+  // "সাব ঢাকা"-র সাথে মিলত না, ইউজার বুঝতে পারত না কোনটার কথা বলা হচ্ছে।
   const LOCATION_LABEL: Record<LocationType, string> = {
     inside_dhaka: "ঢাকার ভিতরে",
-    suburbs: "সাবার্বস",
+    suburbs: "সাব ঢাকা",
     outside_dhaka: "ঢাকার বাইরে",
   };
 
-  // ✅ মাউন্ট হলে localStorage থেকে my-info পড়ুন
+  // ✅ মাউন্ট হলে localStorage থেকে my-info পড়ুন (address + আগের সংরক্ষিত
+  // delivery_location, যদি থাকে) — শুধু UX-এর জন্য প্রি-ফিল, কোনো AI API
+  // call হয় না এখানে। খেয়াল করুন: এই restore হওয়া delivery_location-কে
+  // "verified" ধরে নেওয়া হয় না — প্রতিটা নতুন অর্ডারেই submit করার সময়
+  // ঠিকানা আবার real API দিয়ে fresh check হবে (নিচে handleSubmit দেখুন),
+  // কারণ পুরনো ঠিকানা মিলে গেলেও ইউজার হয়তো এবার ভুল radio সিলেক্ট করেছে,
+  // বা আগের বার ভুলভাবে override করে গিয়েছিল।
   useEffect(() => {
     try {
       const stored = localStorage.getItem("my-info");
       if (stored) {
         const parsed = JSON.parse(stored);
+        const restoredAddress = parsed.address || "";
+
+        // ✅ পরের address-effect রান-এ radio যেন ভুল করে reset না হয়ে যায়
+        skipNextAddressReset.current = true;
+
         setFormData({
           name: parsed.name || "",
           phone: parsed.phone || "",
-          address: parsed.address || "",
+          address: restoredAddress,
         });
+
+        if (
+          parsed.delivery_location === "inside_dhaka" ||
+          parsed.delivery_location === "suburbs" ||
+          parsed.delivery_location === "outside_dhaka"
+        ) {
+          setLocationOption(parsed.delivery_location);
+        }
       }
     } catch {
       // ignore
     }
   }, []);
 
-  // 🆕 location detect হলে বা cart change হলে delivery charge recalculate
+  // 🆕 ইউজার address field-এ হাত দিলে (সত্যিকারের এডিট করলে) radio reset
+  // হয়ে যাবে — যাতে ভুল এলাকার উপর ভিত্তি করে delivery charge/অর্ডার না যায়।
+  // localStorage থেকে প্রথমবার restore করার সময় এটা ট্রিগার হবে না
+  // (skipNextAddressReset flag দিয়ে সেটা এড়ানো হয়েছে)।
+  useEffect(() => {
+    const currentAddress = formData.address;
+    const changed = currentAddress !== prevAddressRef.current;
+    prevAddressRef.current = currentAddress;
+
+    if (!changed) return;
+
+    if (skipNextAddressReset.current) {
+      skipNextAddressReset.current = false;
+      return;
+    }
+
+    setLocationOption((prev) => {
+      if (prev !== null) {
+        return null;
+      }
+      return prev;
+    });
+    setDetectedLocation(null);
+  }, [formData.address]);
+
+  // 🆕 Recalculate delivery charge whenever location or cart changes
   useEffect(() => {
     const updateDeliveryCharge = async () => {
-      if (!location || cart.length === 0) {
+      if (!effectiveLocation || cart.length === 0) {
         setDeliveryCharge(0);
         setDeliveryDiscountPercent(0);
         return;
@@ -95,7 +162,7 @@ export default function CheckoutPage() {
       setDeliveryChargeLoading(true);
       try {
         const result = await calculateDeliveryCharge({
-          location,
+          location: effectiveLocation,
           weight: totalWeight,
           productPrice: cartTotal,
           isCod: true,
@@ -113,43 +180,60 @@ export default function CheckoutPage() {
     };
 
     updateDeliveryCharge();
-  }, [location, cart, cartTotal, totalWeight]);
+  }, [effectiveLocation, cart, cartTotal, totalWeight]);
+
+  // ✅ কমন detect ফাংশন — শুধুমাত্র ম্যানুয়াল "AI Detect" বাটন ক্লিক থেকে
+  // ব্যবহৃত হয়, কোনো auto-trigger নেই। কোনো cache/skip নেই — বাটনে ক্লিক
+  // করলেই প্রতিবার real API কল হয়ে সরাসরি ফলাফল select হয়ে যায়, যাতে
+  // ইউজার "আগেই শনাক্ত করা হয়েছে"-জাতীয় বিভ্রান্তিকর মেসেজ না দেখে।
+  const runDetect = async (address: string, silent: boolean = false) => {
+    setIsDetecting(true);
+    try {
+      const detected = await detectLocationFromAddress(address);
+      setDetectedLocation(detected);
+
+      // ✅ এখন LocationOption === LocationType, তাই সরাসরি বসানো যায়
+      setLocationOption(detected);
+
+      if (!silent) {
+        toast.success(`📍 লোকেশন শনাক্ত: ${LOCATION_LABEL[detected]}`);
+      }
+    } catch (error: any) {
+      console.error("AI Detect error:", error);
+      if (!silent) {
+        toast.error(error.message || "লোকেশন ডিটেক্ট করতে সমস্যা হয়েছে");
+      }
+      // silent (auto) মোডে ব্যর্থ হলে চুপচাপ থাকুন, ইউজারকে বিরক্ত করবেন না —
+      // সে চাইলে ম্যানুয়ালি radio select করতে বা বাটনে ক্লিক করতে পারবে
+    } finally {
+      setIsDetecting(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // 🆕 address field হলে debounce করে location detect করো
-    if (name === "address") {
-      if (addressDebounceTimeout.current) {
-        clearTimeout(addressDebounceTimeout.current);
-      }
-
-      const trimmed = value.trim();
-      if (trimmed.length < 8) {
-        setLocation(null);
-        return;
-      }
-      if (trimmed === lastDetectedAddress.current) return;
-
-      addressDebounceTimeout.current = setTimeout(async () => {
-        setDetectingLocation(true);
-        try {
-          const detected = await detectLocationFromAddress(trimmed);
-          lastDetectedAddress.current = trimmed;
-          setLocation(detected);
-        } catch (error: any) {
-          console.error("Location detect error:", error);
-        } finally {
-          setDetectingLocation(false);
-        }
-      }, 600);
-    }
   };
 
-  // ✅ কোয়ান্টিটি আপডেট (একই লজিক)
+  // ✅ কোনো auto-detect নেই — radio ইউজার সরাসরি ম্যানুয়ালি সিলেক্ট করলে
+  const handleLocationChange = (option: LocationOption) => {
+    setLocationOption(option);
+    setDetectedLocation(null);
+  };
+
+  // ✅ ম্যানুয়াল বাটন — ক্লিক করলেই প্রতিবার real API কল হয়, কোনো cache/skip নেই
+  const handleAIDetect = async () => {
+    const address = formData.address.trim();
+    if (address.length < 8) {
+      toast.error("দয়া করে কমপক্ষে ৮ অক্ষরের একটি সম্পূর্ণ ঠিকানা লিখুন");
+      return;
+    }
+    await runDetect(address, /* silent */ false);
+  };
+
+  // ✅ কোয়ান্টিটি আপডেট
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     const existingItem = cart.find((item) => item.id === itemId);
     if (!existingItem) return;
@@ -194,7 +278,6 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Zod ভ্যালিডেশন
     const result = checkoutSchema.safeParse(formData);
     if (!result.success) {
       const firstError = result.error.issues[0]?.message;
@@ -209,11 +292,53 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 🆕 location detect না হলে submit করতে দিও না
-    if (!location) {
-      toast.error("দয়া করে সঠিক ঠিকানা লিখুন, ডেলিভারি এলাকা শনাক্ত করা যায়নি");
+    if (!locationOption) {
+      toast.error("দয়া করে ডেলিভারি এলাকা নির্বাচন করুন");
       return;
     }
+
+    // ✅ ফাইনাল লেয়ার ভ্যালিডেশন — প্রতিটা অর্ডার confirm করার আগে,
+    // localStorage cache বা আগের কোনো verification-এর উপর ভরসা না করে,
+    // সবসময় real API দিয়ে address থেকে এলাকা যাচাই করা হয় (প্রতিবার,
+    // address আগে থেকেই "চেনা" হোক বা না হোক)। মিলে গেলে তবেই এগোবে।
+    //
+    // মিসম্যাচ হলে (ইউজার ভুলবশত বা ইচ্ছাকৃতভাবে ভুল radio সিলেক্ট করে
+    // থাকলে) অর্ডার আটকে দেওয়া হয় — override করে এগিয়ে যাওয়ার কোনো সুযোগ
+    // নেই। ইউজারকে শুধু warning toast দেখিয়ে সঠিক radio-টা বেছে নিতে বলা
+    // হয়, যাতে সে সঠিক পথে গাইডেড হয়।
+    const trimmedAddress = cleanData.address.trim();
+
+    setValidatingLocation(true);
+    let verified: LocationType | null = null;
+    try {
+      verified = await detectLocationFromAddress(trimmedAddress);
+    } catch (error) {
+      // ✅ ভ্যালিডেশন API call ব্যর্থ হলে (নেটওয়ার্ক/সার্ভার সমস্যা) পুরো
+      // checkout বন্ধ করে দেওয়া ঠিক না — এই ক্ষেত্রে চুপচাপ এগিয়ে যাওয়া হয়
+      // (fail-open)। ইচ্ছাকৃতভাবে এমন রাখা হয়েছে যাতে API down থাকলেও
+      // ইউজার অর্ডার করতে পারে।
+      console.error("Final location validation failed:", error);
+    } finally {
+      setValidatingLocation(false);
+    }
+
+    if (verified && verified !== locationOption) {
+      toast(
+        `⚠️ আপনার ঠিকানা অনুযায়ী ডেলিভারি এলাকা  "${LOCATION_LABEL[verified]}", কিন্তু আপনি "${LOCATION_LABEL[locationOption]}" নির্বাচন করেছেন। দয়া করে সঠিক এলাকাটি ("${LOCATION_LABEL[verified]}") নির্বাচন করুন।`,
+        {
+          duration: 7000,
+          style: {
+            background: "#FEF3C7",
+            color: "#92400E",
+            border: "1px solid #FCD34D",
+          },
+        },
+      );
+      return; // ✅ ব্লক করা হলো — override করে এগোনোর সুযোগ নেই, ইউজারকে
+      // সঠিক radio বেছে নিয়ে আবার "অর্ডার কনফার্ম করুন"-এ চাপ দিতে হবে
+    }
+
+    const finalLocation = locationOption;
 
     // stockId প্রস্তুত
     const stockItems = cart.map((item) => {
@@ -281,7 +406,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ অর্ডার পেলোড
       const payload = {
         customerName: cleanData.name,
         customerPhone: cleanData.phone,
@@ -297,9 +421,9 @@ export default function CheckoutPage() {
         subtotal: cartTotal,
         discountTotal: 0,
         total: grandTotal,
-        location, // 🆕
-        deliveryCharge, // 🆕
-        weight: totalWeight
+        location: finalLocation,
+        deliveryCharge,
+        weight: totalWeight,
       };
 
       console.log("📦 Sending order payload:", payload);
@@ -308,11 +432,12 @@ export default function CheckoutPage() {
       const response = await placeOrder(payload);
       console.log("✅ Order response:", response);
 
-      // ✅ localStorage-এ my-info সংরক্ষণ
       const customerInfo = {
         name: cleanData.name,
         phone: cleanData.phone,
         address: cleanData.address,
+        delivery_location: finalLocation, // পরের ভিজিটে ফর্ম প্রি-ফিল করার জন্য
+        // (submit-এর সময় এটা আবারও real API দিয়ে fresh validate হবে)
       };
       localStorage.setItem("my-info", JSON.stringify(customerInfo));
 
@@ -428,7 +553,9 @@ export default function CheckoutPage() {
                   <span className="font-medium text-stone-800 dark:text-stone-200">
                     {deliveryChargeLoading
                       ? "..."
-                      : `৳${deliveryCharge.toFixed(2)}`}
+                      : effectiveLocation
+                        ? `৳${deliveryCharge.toFixed(2)}`
+                        : "—"}
                   </span>
                 </div>
                 <div className="border-t border-white/30 dark:border-white/10 pt-2 mt-2">
@@ -437,7 +564,7 @@ export default function CheckoutPage() {
                       মোট:
                     </span>
                     <span className="text-xl text-[#E57373]">
-                      ৳{grandTotal.toFixed(2)}
+                      {effectiveLocation ? `৳${grandTotal.toFixed(2)}` : "—"}
                     </span>
                   </div>
                 </div>
@@ -503,26 +630,107 @@ export default function CheckoutPage() {
                     className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2"
                   >
                     সম্পূর্ণ ঠিকানা <span className="text-[#E57373]">*</span>
-                    {detectingLocation && (
-                      <span className="text-xs text-stone-400 ml-2">
-                        এলাকা শনাক্ত করা হচ্ছে...
-                      </span>
-                    )}
-                    {location && !detectingLocation && (
-                      <span className="text-xs text-green-600 ml-2">
-                        ✓ {LOCATION_LABEL[location]}
-                      </span>
-                    )}
                   </label>
                   <textarea
                     id="address"
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    rows={4}
+                    rows={3}
                     placeholder="জেলা, থানা, গ্রাম/শহর, বাড়ি নম্বর, রাস্তার নাম"
                     className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-black/30 backdrop-blur-md text-stone-800 dark:text-stone-200 placeholder-stone-500/70 focus:outline-none focus:ring-2 focus:ring-[#BA68C8]/50 focus:border-transparent transition-all resize-none"
                   />
+                </div>
+
+                {/* 🆕 Location Radios + AI Detect Button (লেবেল বরাবর) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                      <MapPin size={16} className="inline mr-1" />
+                      ডেলিভারি এলাকা <span className="text-[#E57373]">*</span>
+                    </label>
+
+                    {/* ✅ AI Detect বাটন — লেবেলের সাথে একই লাইনে, ডানপাশে।
+                        radio select করলেও disable হয় না, শুধু detect
+                        চলাকালীন disable থাকে। ইউজার চাইলে যেকোনো সময়
+                        re-check করতে পারবে। কোনো auto-trigger নেই — শুধু
+                        ক্লিকেই detect হয়। */}
+                    <button
+                      type="button"
+                      onClick={handleAIDetect}
+                      disabled={isDetecting}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all ${
+                        isDetecting
+                          ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-default"
+                          : "bg-gradient-to-r from-[#E57373] to-[#BA68C8] text-white hover:shadow-md hover:scale-105 cursor-pointer"
+                      }`}
+                    >
+                      <Sparkles size={14} />
+                      {isDetecting
+                        ? "ডিটেক্ট হচ্ছে..."
+                        : "AI দিয়ে ডিটেক্ট করুন"}
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="location"
+                        value="inside_dhaka"
+                        checked={locationOption === "inside_dhaka"}
+                        onChange={() => handleLocationChange("inside_dhaka")}
+                        className="accent-[#BA68C8] cursor-pointer"
+                      />
+                      ঢাকার ভিতরে
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="location"
+                        value="suburbs"
+                        checked={locationOption === "suburbs"}
+                        onChange={() => handleLocationChange("suburbs")}
+                        className="accent-[#BA68C8] cursor-pointer"
+                      />
+                      সাব ঢাকা
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="location"
+                        value="outside_dhaka"
+                        checked={locationOption === "outside_dhaka"}
+                        onChange={() => handleLocationChange("outside_dhaka")}
+                        className="accent-[#BA68C8] cursor-pointer"
+                      />
+                      ঢাকার বাইরে
+                    </label>
+                  </div>
+
+                  {/* Status message for AI detection */}
+                  {isDetecting && (
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+                      <span className="animate-spin h-3 w-3 border-2 border-stone-400 border-t-transparent rounded-full"></span>
+                      এলাকা শনাক্ত করা হচ্ছে...
+                    </p>
+                  )}
+                  {!isDetecting && locationOption && detectedLocation && (
+                    <p className="mt-1 text-xs text-green-600">
+                      ✓ শনাক্ত: {LOCATION_LABEL[detectedLocation]} (AI)
+                    </p>
+                  )}
+                  {!isDetecting && locationOption && !detectedLocation && (
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                      ✓ আপনি ম্যানুয়ালি সিলেক্ট করেছেন
+                    </p>
+                  )}
+                  {!isDetecting && !locationOption && (
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                      AI Detect বাটনে ক্লিক করুন অথবা ম্যানুয়ালি এলাকা নির্বাচন
+                      করুন
+                    </p>
+                  )}
                 </div>
 
                 <div className="backdrop-blur-md bg-gradient-to-br from-white/30 to-white/10 dark:from-black/40 dark:to-black/20 rounded-xl p-4 border border-white/30 dark:border-white/10 shadow-lg">
@@ -542,15 +750,17 @@ export default function CheckoutPage() {
                   variant="secondary"
                   size="lg"
                   fullWidth
-                  loading={loading || checkingStock}
-                  disabled={loading || checkingStock}
+                  loading={loading || checkingStock || validatingLocation}
+                  disabled={loading || checkingStock || validatingLocation}
                   className="mt-4"
                 >
-                  {checkingStock
-                    ? "স্টক যাচাই করা হচ্ছে..."
-                    : loading
-                      ? "অর্ডার জমা হচ্ছে..."
-                      : "অর্ডার কনফার্ম করুন"}
+                  {validatingLocation
+                    ? "এলাকা যাচাই করা হচ্ছে..."
+                    : checkingStock
+                      ? "স্টক যাচাই করা হচ্ছে..."
+                      : loading
+                        ? "অর্ডার জমা হচ্ছে..."
+                        : "অর্ডার কনফার্ম করুন"}
                 </Button>
 
                 <div className="text-center mt-4">
