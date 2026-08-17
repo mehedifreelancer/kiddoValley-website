@@ -2,16 +2,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-
 import AllProductSection from "./components/shared/AllProductSection";
 import HeroSection from "./components/shared/HeroSection";
-import { getPublicHeroSliders } from "./homePage.service";
+import {
+  getPublicGridSettings,
+  getPublicHeroSliders,
+} from "./homePage.service";
 
 export default function Home() {
   const {
     data: slides,
-    isLoading,
-    error,
+    isLoading: slidesLoading,
+    error: slidesError,
   } = useQuery({
     queryKey: ["public-hero-sliders"],
     queryFn: getPublicHeroSliders,
@@ -19,7 +21,18 @@ export default function Home() {
     gcTime: 10 * 60 * 1000,
   });
 
-  if (isLoading) {
+  const {
+    data: gridClasses,
+    isLoading: gridLoading,
+    error: gridError,
+  } = useQuery({
+    queryKey: ["layout-settings"],
+    queryFn: getPublicGridSettings,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  if (slidesLoading || gridLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -27,7 +40,7 @@ export default function Home() {
     );
   }
 
-  if (error || !slides) {
+  if (slidesError || !slides || gridError) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <p className="text-red-500">Failed to load page content.</p>
@@ -38,7 +51,7 @@ export default function Home() {
   return (
     <>
       <HeroSection slides={slides} />
-      <AllProductSection />
+      <AllProductSection gridClasses={gridClasses} />
     </>
   );
 }

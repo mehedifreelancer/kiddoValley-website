@@ -4,11 +4,10 @@
 import { motion } from "framer-motion";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getPublicProducts, Product } from "@/app/products/product.service";
 
 // ✅ নিরাপদ ম্যাপিং ফাংশন – API প্রোডাক্টকে ProductCard-এর জন্য উপযুক্ত অবজেক্টে রূপান্তর
-// AllProductSection.tsx - mapProductToBook ফাংশন
 const mapProductToBook = (product: Product): any => {
   if (!product) {
     return {
@@ -26,7 +25,7 @@ const mapProductToBook = (product: Product): any => {
       variants: [],
       attributeOrderByPriority: [],
       thumbnailImage: "/placeholder.jpg",
-      weight: 0, // 🆕 এখানে যোগ করুন (ডিফল্ট)
+      weight: 0,
       isForceOrder: false,
       forceOrderPriority: 0,
       isPublished: false,
@@ -55,7 +54,7 @@ const mapProductToBook = (product: Product): any => {
     variants: product.variants || [],
     attributeOrderByPriority: product.attributeOrderByPriority || [],
     thumbnailImage: product.thumbnailImage || "/placeholder.jpg",
-    weight: product.weight ?? 0.5, // 🆕 এই লাইনটা যোগ করুন
+    weight: product.weight ?? 0.5,
     categoryObj: product.category,
     isForceOrder: product.isForceOrder,
     forceOrderPriority: product.forceOrderPriority,
@@ -64,7 +63,36 @@ const mapProductToBook = (product: Product): any => {
     updatedAt: product.updatedAt,
   };
 };
+
 export default function AllProductSection() {
+  // State for dynamic grid classes from layout settings
+  const [gridClasses, setGridClasses] = useState(
+    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
+  );
+
+  // Fetch layout settings on mount
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/public/layout-settings")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch layout settings");
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted && data.success && data.data?.gridClasses) {
+          setGridClasses(data.data.gridClasses);
+        }
+      })
+      .catch(() => {
+        // fallback to default (already set)
+        console.warn("Using default grid layout");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const {
     data,
     fetchNextPage,
@@ -105,10 +133,10 @@ export default function AllProductSection() {
 
   if (isLoading) {
     return (
-      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50 ">
+      <section className="py-16 bg-cream-50/50 dark:bg-dark-bg/50">
         <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px]">
           <div className="flex justify-center items-center min-h-[300px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
           </div>
         </div>
       </section>
@@ -154,7 +182,8 @@ export default function AllProductSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {/* ✅ Dynamic grid classes applied here */}
+        <div className={gridClasses}>
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -167,7 +196,7 @@ export default function AllProductSection() {
         {hasNextPage && (
           <div ref={loadMoreRef} className="flex justify-center py-8">
             {isFetchingNextPage && (
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
             )}
           </div>
         )}
