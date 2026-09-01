@@ -6,6 +6,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
 import { useEffect, useRef, useState } from "react";
 import { getPublicProducts, Product } from "@/app/products/product.service";
+import { getPublicGridSettings } from "@/app/homePage.service";
 
 // ✅ নিরাপদ ম্যাপিং ফাংশন – API প্রোডাক্টকে ProductCard-এর জন্য উপযুক্ত অবজেক্টে রূপান্তর
 const mapProductToBook = (product: Product): any => {
@@ -73,14 +74,10 @@ export default function AllProductSection() {
   // Fetch layout settings on mount
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/public/layout-settings")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch layout settings");
-        return res.json();
-      })
-      .then((data) => {
-        if (isMounted && data.success && data.data?.gridClasses) {
-          setGridClasses(data.data.gridClasses);
+    getPublicGridSettings()
+      .then((gridClasses) => {
+        if (isMounted && gridClasses) {
+          setGridClasses(gridClasses);
         }
       })
       .catch(() => {
