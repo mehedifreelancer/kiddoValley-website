@@ -73,7 +73,7 @@ export default function ReturnPolicyPage() {
         >
           <h1 className="text-4xl sm:text-5xl font-light text-stone-800 dark:text-stone-200 mb-4">
             <span className="font-semibold bg-gradient-to-r from-[#E57373] to-[#BA68C8] bg-clip-text text-transparent">
-              ফেরত ও আংশিক ফেরত
+              রিফান্ড ও আংশিক রিফান্ড
             </span>{" "}
             নীতি
           </h1>
@@ -342,4 +342,3 @@ export default function ReturnPolicyPage() {
     </div>
   );
 }
-

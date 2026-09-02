@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation"; // 🆕 usePathname
 import { useQuery } from "@tanstack/react-query";
 import Modal from "@/app/components/shared/Modal";
 import SideModal from "@/app/components/shared/SideModal";
@@ -16,6 +16,8 @@ export default function ProductModal() {
   const router = useRouter();
   const { slug } = useParams<{ slug: string }>();
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const pathname = usePathname(); // 🆕
+
   const { isMobile } = useDeviceDetect(768);
   const { isCartOpen } = useGlobal(); // ✅ কার্ট স্টেট নিন
 
@@ -30,7 +32,9 @@ export default function ProductModal() {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
-
+  if (!pathname?.startsWith(`/products/${slug}`)) {
+    return null;
+  }
   if (isLoading) {
     const Loader = () => (
       <div className="p-8 flex justify-center">
@@ -107,7 +111,7 @@ export default function ProductModal() {
           isOpen={isVideoOpen}
           onClose={() => setIsVideoOpen(false)}
           title={`${product.name} - ভিডিও প্রিভিউ`}
-          size="xl"
+          size="4xl"
         >
           <VideoModalContent
             videoUrl={product.videoUrl}

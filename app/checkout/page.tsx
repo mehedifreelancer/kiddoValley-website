@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShoppingBag, Truck, Wallet, MapPin, Sparkles } from "lucide-react";
 import { useGlobal } from "../contexts/GlobalContext";
 import Button from "../components/shared/Button";
@@ -19,8 +19,11 @@ import { checkBulkStock } from "../services/cart.service";
 import { checkoutSchema } from "./checkout.schema";
 import { checkStockForAdd, getUnavailableItemsList } from "../lib/stockUtils";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isBuyNowMode = searchParams.get("mode") === "buynow"; // 🆕
+
   const {
     cart,
     updateQuantity: globalUpdateQuantity,
@@ -28,7 +31,19 @@ export default function CheckoutPage() {
     cartTotal,
     cartCount,
     clearCart,
+    buyNowItem, // 🆕
+    updateBuyNowQuantity, // 🆕
+    clearBuyNowItem, // 🆕
   } = useGlobal();
+
+  // 🆕 effective cart — buy-now mode হলে শুধু ওই একটা item, নাহলে normal cart
+  const effectiveCart = isBuyNowMode && buyNowItem ? [buyNowItem] : cart;
+  const effectiveCartTotal =
+    isBuyNowMode && buyNowItem
+      ? buyNowItem.price * buyNowItem.quantity
+      : cartTotal;
+  const effectiveCartCount =
+    isBuyNowMode && buyNowItem ? buyNowItem.quantity : cartCount;
 
   // ✅ localStorage থেকে প্রি-ফিল
   const [formData, setFormData] = useState({
@@ -72,14 +87,14 @@ export default function CheckoutPage() {
   // reset skip করার flag
   const skipNextAddressReset = useRef<boolean>(false);
 
-  // totalWeight from cart
-  const totalWeight = cart.reduce(
+  // totalWeight from effectiveCart
+  const totalWeight = effectiveCart.reduce(
     (sum, item) => sum + (item.weight || 0) * item.quantity,
     0,
   );
 
   const effectiveLocation = locationOption; // locationOption: inside_dhaka | suburbs | outside_dhaka | null
-  const grandTotal = cartTotal + deliveryCharge;
+  const grandTotal = effectiveCartTotal + deliveryCharge;
 
   // ✅ radio-তে যা লেখা আছে ("সাব ঢাকা"), warning message-এও ঠিক সেই একই
   // শব্দ ব্যবহার করা হয় — আগে এখানে "সাবার্বস" লেখা ছিল যেটা radio-র
@@ -151,10 +166,10 @@ export default function CheckoutPage() {
     setDetectedLocation(null);
   }, [formData.address]);
 
-  // 🆕 Recalculate delivery charge whenever location or cart changes
+  // 🆕 Recalculate delivery charge whenever location or effectiveCart changes
   useEffect(() => {
     const updateDeliveryCharge = async () => {
-      if (!effectiveLocation || cart.length === 0) {
+      if (!effectiveLocation || effectiveCart.length === 0) {
         setDeliveryCharge(0);
         setDeliveryDiscountPercent(0);
         return;
@@ -164,7 +179,7 @@ export default function CheckoutPage() {
         const result = await calculateDeliveryCharge({
           location: effectiveLocation,
           weight: totalWeight,
-          productPrice: cartTotal,
+          productPrice: effectiveCartTotal,
           isCod: true,
         });
         setDeliveryCharge(result.totalCharge || 0);
@@ -180,7 +195,7 @@ export default function CheckoutPage() {
     };
 
     updateDeliveryCharge();
-  }, [effectiveLocation, cart, cartTotal, totalWeight]);
+  }, [effectiveLocation, effectiveCart, effectiveCartTotal, totalWeight]);
 
   // ✅ কমন detect ফাংশন — শুধুমাত্র ম্যানুয়াল "AI Detect" বাটন ক্লিক থেকে
   // ব্যবহৃত হয়, কোনো auto-trigger নেই। কোনো cache/skip নেই — বাটনে ক্লিক
@@ -235,11 +250,20 @@ export default function CheckoutPage() {
 
   // ✅ কোয়ান্টিটি আপডেট
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
-    const existingItem = cart.find((item) => item.id === itemId);
+    const existingItem = effectiveCart.find((item) => item.id === itemId);
     if (!existingItem) return;
 
+    // 🆕 buy-now mode হলে buyNowItem-এর quantity আপডেট হয়, নাহলে normal cart
+    const applyUpdate = (qty: number) => {
+      if (isBuyNowMode) {
+        updateBuyNowQuantity(qty);
+      } else {
+        globalUpdateQuantity(itemId, qty);
+      }
+    };
+
     if (newQuantity < existingItem.quantity) {
-      globalUpdateQuantity(itemId, newQuantity);
+      applyUpdate(newQuantity);
       return;
     }
 
@@ -254,7 +278,7 @@ export default function CheckoutPage() {
       const stockInfo = await checkStockForAdd(
         stockId,
         newQuantity - existingItem.quantity,
-        cart,
+        isBuyNowMode ? [] : cart, // 🔧 buy-now mode-এ cart-এর সাথে conflict check করার দরকার নেই
       );
       if (!stockInfo.available) {
         if (stockInfo.currentQty === 0) {
@@ -266,13 +290,23 @@ export default function CheckoutPage() {
         }
         return;
       }
-      globalUpdateQuantity(itemId, newQuantity);
+      applyUpdate(newQuantity);
       toast.success(`"${existingItem.name}" - কোয়ান্টিটি আপডেট করা হয়েছে`);
     } catch (error: any) {
       toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
     } finally {
       setUpdatingQuantity(null);
     }
+  };
+
+  // 🆕 buy-now mode-এ item remove করলে হোমে ফেরত যাবে — একটাই product থাকে
+  const handleRemoveItem = (id: string) => {
+    if (isBuyNowMode) {
+      clearBuyNowItem();
+      router.push("/");
+      return;
+    }
+    removeFromCart(id);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -287,8 +321,10 @@ export default function CheckoutPage() {
 
     const cleanData = result.data;
 
-    if (cart.length === 0) {
-      toast.error("আপনার কার্ট খালি");
+    if (effectiveCart.length === 0) {
+      toast.error(
+        isBuyNowMode ? "কোনো প্রোডাক্ট সিলেক্ট করা নেই" : "আপনার কার্ট খালি",
+      );
       return;
     }
 
@@ -341,7 +377,7 @@ export default function CheckoutPage() {
     const finalLocation = locationOption;
 
     // stockId প্রস্তুত
-    const stockItems = cart.map((item) => {
+    const stockItems = effectiveCart.map((item) => {
       let stockId = item.stockId;
       if (!stockId && item.variant?.stocks && item.variant.stocks.length > 0) {
         stockId = item.variant.stocks[0]?.id;
@@ -373,7 +409,7 @@ export default function CheckoutPage() {
 
       const unavailable = results.filter((r) => !r.available);
       if (unavailable.length > 0) {
-        const itemsList = getUnavailableItemsList(results, cart);
+        const itemsList = getUnavailableItemsList(results, effectiveCart);
         toast.custom(
           (t) => (
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl max-w-md w-full border border-red-200 dark:border-red-800">
@@ -413,12 +449,13 @@ export default function CheckoutPage() {
         items: stockItems.map(({ stockId, quantity }) => ({
           stockId,
           quantity,
-          unitPrice: cart.find((item) => item.stockId === stockId)?.price || 0,
+          unitPrice:
+            effectiveCart.find((item) => item.stockId === stockId)?.price || 0,
           totalPrice:
-            (cart.find((item) => item.stockId === stockId)?.price || 0) *
-            quantity,
+            (effectiveCart.find((item) => item.stockId === stockId)?.price ||
+              0) * quantity,
         })),
-        subtotal: cartTotal,
+        subtotal: effectiveCartTotal,
         discountTotal: 0,
         total: grandTotal,
         location: finalLocation,
@@ -442,7 +479,13 @@ export default function CheckoutPage() {
       localStorage.setItem("my-info", JSON.stringify(customerInfo));
 
       toast.success(response.message || "অর্ডার সফলভাবে জমা হয়েছে!");
-      clearCart();
+
+      // 🔧 buy-now হলে buyNowItem clear, নাহলে normal cart clear
+      if (isBuyNowMode) {
+        clearBuyNowItem();
+      } else {
+        clearCart();
+      }
       router.push("/order-confirmation");
     } catch (error: any) {
       console.error("❌ Order error:", error);
@@ -455,7 +498,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (cart.length === 0) {
+  if (effectiveCart.length === 0) {
     return (
       <div className="min-h-[60vh] sm:min-h-[70vh] flex flex-col items-center justify-center relative px-4">
         <div className="fixed inset-0 bg-gradient-to-br from-[#E57373]/10 via-[#BA68C8]/10 to-[#9575CD]/10 dark:from-[#E57373]/5 dark:via-[#BA68C8]/5 dark:to-[#9575CD]/5 backdrop-blur-xl -z-10" />
@@ -466,7 +509,9 @@ export default function CheckoutPage() {
             className="sm:size-16 lg:size-20 text-stone-300 dark:text-stone-600 mb-4 sm:mb-6 mx-auto opacity-80"
           />
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-stone-800 dark:text-stone-200 mb-2 sm:mb-3">
-            আপনার কার্ট খালি
+            {isBuyNowMode
+              ? "কোনো প্রোডাক্ট সিলেক্ট করা নেই"
+              : "আপনার কার্ট খালি"}
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-stone-600 dark:text-stone-400 mb-6 sm:mb-8">
             অর্ডার করতে চাইলে প্রথমে পণ্য যোগ করুন
@@ -500,14 +545,14 @@ export default function CheckoutPage() {
             <div className="p-4 border-b border-white/30 dark:border-white/10 bg-white/10 dark:bg-black/40">
               <h2 className="text-lg font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-2">
                 <ShoppingBag size={18} className="text-[#E57373]" />
-                আপনার পণ্যসমূহ ({cartCount})
+                আপনার পণ্যসমূহ ({effectiveCartCount})
               </h2>
             </div>
 
             <div className="divide-y divide-white/20 dark:divide-white/10 flex-1 overflow-y-auto max-h-[500px]">
               <div className="space-y-2">
                 <AnimatePresence mode="popLayout">
-                  {cart.map((item) => (
+                  {effectiveCart.map((item) => (
                     <motion.div
                       key={item.id}
                       layout
@@ -519,7 +564,7 @@ export default function CheckoutPage() {
                       <CartItem
                         item={item}
                         onUpdateQuantity={handleUpdateQuantity}
-                        onRemove={removeFromCart}
+                        onRemove={handleRemoveItem}
                         variant="checkout"
                         showRemove={true}
                         disabled={updatingQuantity === item.id}
@@ -537,7 +582,7 @@ export default function CheckoutPage() {
                     সাবটোটাল:
                   </span>
                   <span className="font-medium text-stone-800 dark:text-stone-200">
-                    ৳{cartTotal.toFixed(2)}
+                    ৳{effectiveCartTotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -765,10 +810,10 @@ export default function CheckoutPage() {
 
                 <div className="text-center mt-4">
                   <Link
-                    href="/cart"
+                    href={isBuyNowMode ? "/" : "/cart"}
                     className="text-sm text-[#BA68C8]/90 hover:text-[#8E4C9E] transition-colors backdrop-blur-sm px-4 py-2 rounded-lg bg-white/10 dark:bg-black/20 inline-block border border-white/20 dark:border-white/10 hover:bg-white/20 dark:hover:bg-black/30"
                   >
-                    ← কার্টে ফিরে যান
+                    {isBuyNowMode ? "← শপিং চালিয়ে যান" : "← কার্টে ফিরে যান"}
                   </Link>
                 </div>
               </div>
@@ -777,5 +822,22 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 🆕 useSearchParams() Next.js App Router-এ Suspense boundary ছাড়া কাজ করে
+// না (build-time error দেয়) — তাই মূল কম্পোনেন্টকে Suspense দিয়ে wrap
+// করা হলো
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-stone-500 dark:text-stone-400">লোড হচ্ছে...</p>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

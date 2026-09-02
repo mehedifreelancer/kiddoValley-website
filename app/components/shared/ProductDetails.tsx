@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Play,
@@ -28,13 +29,12 @@ import ProductCard from "./ProductCard";
 import toast from "react-hot-toast";
 import { checkStockForAdd } from "@/app/lib/stockUtils";
 
-
-
 interface ProductDetailsProps {
   product: Product;
   showIngInModal: boolean;
   onVideoOpen?: () => void;
   onVideoClose?: () => void;
+  onCloseModal?: () => void; // 🆕 প্যারেন্ট মোডাল বন্ধ করার জন্য
 }
 
 export default function ProductDetails({
@@ -42,14 +42,17 @@ export default function ProductDetails({
   showIngInModal,
   onVideoOpen,
   onVideoClose,
+  onCloseModal, // 🆕
 }: ProductDetailsProps) {
-  const { addToCart, openCart, cart } = useGlobal();
+  const { addToCart, openCart, cart, startBuyNow } = useGlobal();
+  const router = useRouter();
 
   const [quantity, setQuantity] = useState(1);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [thumbSwiper, setThumbSwiper] = useState<any>(null);
   const mainSwiperRef = useRef<any>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
   // ✅ রিলেটেড প্রোডাক্ট ফেচ – শুধু একবার (ডুপ্লিকেট কল বন্ধ)
@@ -332,6 +335,61 @@ export default function ProductDetails({
       toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  // 🆕 এখনই কিনুন — cart bypass করে সরাসরি checkout-এ নিয়ে যায়
+  const handleBuyNow = async () => {
+    if (!currentVariant) {
+      toast.error("কোনো ভেরিয়েন্ট সিলেক্ট করা নেই");
+      return;
+    }
+
+    const stockId = currentVariant.stockId;
+    if (!stockId) {
+      toast.error("এই ভেরিয়েন্টের জন্য স্টক আইডি পাওয়া যায়নি");
+      return;
+    }
+
+    setIsBuyingNow(true);
+    try {
+      // ✅ cart bypass করছি বলে stock check-এ খালি array পাঠাচ্ছি —
+      // cart-এ থাকা একই product-এর quantity এখানে বিবেচ্য না
+      const stockInfo = await checkStockForAdd(stockId, quantity, []);
+
+      if (!stockInfo.available) {
+        if (stockInfo.currentQty === 0) {
+          toast.error(`"${stockInfo.productName}" - স্টক শেষ!`);
+        } else {
+          toast.error(
+            `"${stockInfo.productName}" - শুধুমাত্র ${stockInfo.currentQty}টি স্টকে আছে! (আপনি চাচ্ছেন ${quantity}টি)`,
+          );
+        }
+        setIsBuyingNow(false);
+        return;
+      }
+
+      const uniqueId = `${product.id}-${currentVariant.sku}`;
+      startBuyNow({
+        id: uniqueId,
+        name: product.name,
+        price: discountedPrice,
+        originalPrice: displayPrice,
+        discountPercent: displayDiscount,
+        stockId: stockId,
+        imageUrl: displayImage,
+        sku: currentVariant?.sku,
+        variant: currentVariant,
+        weight: product.weight,
+        quantity: quantity,
+      });
+
+      router.push("/checkout?mode=buynow");
+    } catch (error: any) {
+      console.error("Buy now error:", error);
+      toast.error(error.message || "স্টক চেক করতে সমস্যা হয়েছে");
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
@@ -625,18 +683,32 @@ export default function ProductDetails({
                 : "কার্টে যোগ করুন"}
             </Button>
 
-            {product.videoUrl && (
+            {/* 🆕 এখনই কিনুন — cart bypass করে সরাসরি checkout-এ */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleBuyNow}
+              disabled={displayInStock === "out of stock" || isBuyingNow}
+              loading={isBuyingNow}
+              className="flex-1"
+            >
+              এখনই কিনুন
+            </Button>
+          </div>
+
+          {/* {product.videoUrl && (
+            <div className="flex pt-2">
               <Button
                 variant="secondary"
                 size="sm"
                 icon={<Play size={18} />}
                 onClick={handleVideoOpen}
-                className="flex-1"
+                className="w-full"
               >
                 ভিডিও দেখুন
               </Button>
-            )}
-          </div>
+            </div>
+          )} */}
 
           <div className="prose prose-stone dark:prose-invert max-w-none mt-5">
             <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">

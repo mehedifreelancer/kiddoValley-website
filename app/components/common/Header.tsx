@@ -50,11 +50,11 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
   }, [pathname]);
 
   const navItems = [
-    { name: "Home", href: "/", color: "#D51B26" },
-    { name: "Books", href: "/books", color: "#36A43D" },
-    { name: "Categories", href: "/categories", color: "#8859F8" },
-    { name: "New Arrivals", href: "/new", color: "#1C08A9" },
-    { name: "Contact", href: "/contact", color: "#D51B26" },
+    { name: "হোম", href: "/", color: "#D51B26" },
+    { name: "আমাদের সম্পর্কে", href: "/about-us", color: "#36A43D" },
+    { name: "বিভাগসমূহ", href: "/categories", color: "#8859F8" },
+    { name: "নতুন আসা", href: "/new", color: "#1C08A9" },
+    { name: "যোগাযোগ", href: "/contact-us", color: "#D51B26" },
   ];
 
   const toggleTheme = () => {

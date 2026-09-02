@@ -49,6 +49,13 @@ interface GlobalContextType {
   cartTotal: number;
   cartCount: number;
 
+  buyNowItem: CartItem | null;
+  startBuyNow: (
+    item: Omit<CartItem, "quantity"> & { quantity?: number },
+  ) => void;
+  updateBuyNowQuantity: (quantity: number) => void;
+  clearBuyNowItem: () => void;
+
   // Cart Sidebar
   isCartOpen: boolean;
   openCart: () => void;
@@ -96,6 +103,7 @@ export function GlobalProvider({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [buyNowItem, setBuyNowItemState] = useState<CartItem | null>(null);
 
   // ✅ Web Settings
   const [webSettings, setWebSettings] = useState<WebSettings | null>(
@@ -120,6 +128,14 @@ export function GlobalProvider({
         setCart(JSON.parse(savedCart));
       } catch {
         console.error("Failed to parse cart");
+      }
+    }
+    const savedBuyNow = sessionStorage.getItem("buyNowItem");
+    if (savedBuyNow) {
+      try {
+        setBuyNowItemState(JSON.parse(savedBuyNow));
+      } catch {
+        console.error("Failed to parse buyNowItem");
       }
     }
   }, []);
@@ -186,6 +202,33 @@ export function GlobalProvider({
   };
 
   const clearCart = () => setCart([]);
+  // 🆕 Buy Now functions
+  const startBuyNow = (
+    item: Omit<CartItem, "quantity"> & { quantity?: number },
+  ) => {
+    const newItem: CartItem = {
+      ...item,
+      quantity: item.quantity || 1,
+      imageUrl: item.imageUrl || "",
+      weight: item.weight ?? 0,
+    };
+    setBuyNowItemState(newItem);
+    sessionStorage.setItem("buyNowItem", JSON.stringify(newItem));
+  };
+
+  const updateBuyNowQuantity = (quantity: number) => {
+    setBuyNowItemState((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, quantity };
+      sessionStorage.setItem("buyNowItem", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const clearBuyNowItem = () => {
+    setBuyNowItemState(null);
+    sessionStorage.removeItem("buyNowItem");
+  };
 
   const cartTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -226,6 +269,10 @@ export function GlobalProvider({
         clearCart,
         cartTotal,
         cartCount,
+        buyNowItem,
+        startBuyNow,
+        updateBuyNowQuantity,
+        clearBuyNowItem,
         isCartOpen,
         openCart,
         closeCart,

@@ -290,7 +290,7 @@ export default function ProductCard({
             href={`/products/${product.slug}`}
             className="block relative aspect-[4/3] overflow-hidden"
           >
-            <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform backface-visibility-hidden">
+            <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform backface-visibility-hidden bg-gradient-to-br from-[#E57373]/11 to-[#BA68C8]/11">
               {displayImage && displayImage !== "/placeholder.jpg" ? (
                 <Image
                   src={displayImage}
@@ -340,7 +340,7 @@ export default function ProductCard({
               {product.videoUrl && (
                 <button
                   onClick={handleViewVideo}
-                  className="cursor-pointer flex items-center gap-1.5 text-sm font-medium bg-gray-600 hover:bg-rose-300 text-white px-2 rounded-full transition-colors shadow-sm"
+                  className="cursor-pointer flex items-center gap-1.5 text-sm font-normal bg-gray-600 hover:bg-gray-700 text-white px-2 rounded-full transition-all duration-300 shadow-sm hover:scale-105 animate-pulse hover:animate-none ring-2 ring-gray-400/50 hover:ring-gray-400"
                 >
                   <Play size={12} className="fill-white" />
                   ভিডিও

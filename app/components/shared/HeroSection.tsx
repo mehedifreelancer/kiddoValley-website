@@ -41,7 +41,8 @@ export default function HeroSection({ slides }: HeroSectionProps) {
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         pagination={{ clickable: true, dynamicBullets: true }}
         loop={true}
-        className="w-full h-[50vh] min-h-[400px] max-h-[600px]"
+        // 🆕 মোবাইলে height auto, বড় স্ক্রিনে আগের মতোই
+        className="w-full h-auto min-h-[520px] sm:min-h-[450px] md:h-[50vh] md:max-h-[600px]"
       >
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
@@ -58,7 +59,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
 
               {/* Content container */}
               <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 h-full relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center h-full py-6 md:py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center h-full py-8 md:py-8">
                   {/* Left content */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -96,7 +97,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                     </p>
 
                     {/* CTA Buttons */}
-                    <div className="flex flex-wrap gap-3 mb-6 md:mb-8">
+                    <div className="flex flex-wrap gap-3 mb-2 md:mb-6 lg:mb-8">
                       <Link
                         href="/books"
                         className="group px-5 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg font-medium text-sm shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
@@ -123,7 +124,8 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    className="relative z-10"
+                    // 🆕 ছোট বই দুইটার জন্য বাড়তি জায়গা রাখতে padding + overflow visible
+                    className="relative z-10 px-6 md:px-10"
                   >
                     <div className="relative aspect-square max-w-sm mx-auto">
                       {/* Main book */}
@@ -133,14 +135,15 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 z-20 transform scale-110"
                       >
                         <div className="relative w-full h-full transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                          <div className="absolute inset-0 rounded-xl shadow-sm overflow-hidden">
+                          {/* 🆕 object-cover এর বদলে object-contain — কোনো অংশ কাটবে না */}
+                          <div className="absolute inset-0 rounded-xl shadow-sm overflow-hidden bg-white/40 dark:bg-black/20">
                             <img
                               src={slide.innerBigImage}
                               alt="Book cover"
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white bg-gradient-to-t from-black/60 to-transparent">
-                              <div className="text-sm md:text-base font-bold mb-0.5">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white bg-gradient-to-t from-black/80 to-transparent">
+                              <div className="text-sm md:text-base font-bold mb-0.5 ">
                                 {slide.bookTitle}
                               </div>
                               <div className="text-xs opacity-80">
@@ -159,10 +162,11 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                           rotate: [0, 15, 0],
                         }}
                         transition={{ duration: 8, repeat: Infinity, delay: 1 }}
-                        className="absolute top-0 right-[-20px] w-16 h-20 md:w-20 md:h-24 z-10"
+                        // 🆕 মোবাইলে right-0 (বাইরে যাবে না), বড় স্ক্রিনে আগের মতো right-[-20px]
+                        className="absolute top-[-15px] right-0 md:right-[-20px] w-14 h-18 sm:w-16 sm:h-20 md:w-20 md:h-24 z-10"
                       >
                         <div className="relative w-full h-full transform -rotate-6 hover:rotate-0 transition-transform duration-500">
-                          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-500 opacity-80 rounded-lg shadow-md overflow-hidden">
+                          <div className="absolute inset-0  opacity-80 rounded-lg shadow-md overflow-hidden">
                             <img
                               src={slide.innerTopImage}
                               alt="Book"
@@ -185,10 +189,11 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                           repeat: Infinity,
                           delay: 1,
                         }}
-                        className="absolute bottom-5 left-[-20px] w-14 h-16 md:w-16 md:h-20 z-10"
+                        // 🆕 মোবাইলে left-0 (বাইরে যাবে না), বড় স্ক্রিনে আগের মতো left-[-20px]
+                        className="absolute bottom-[-10px] left-[-15px] md:left-[-20px] w-12 h-14 sm:w-14 sm:h-16 md:w-16 md:h-20 z-10"
                       >
                         <div className="relative w-full h-full transform rotate-12 hover:rotate-0 transition-transform duration-500">
-                          <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-60 rounded-lg shadow-md overflow-hidden">
+                          <div className="absolute inset-0  opacity-60 rounded-lg shadow-md overflow-hidden">
                             <img
                               src={slide.innerBottomImage}
                               alt="Book"

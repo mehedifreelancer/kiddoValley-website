@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Anek_Bangla } from "next/font/google"; // 🔧 শুধু এটাই দরকার
+
 import "./globals.css";
 import "./css/button.css";
 import Header from "./components/common/Header";
@@ -10,6 +12,12 @@ import { Providers } from "./providers";
 import { getPublicWebSettings } from "./web-stetings/webSettings.service";
 import ToasterProvider from "./components/shared/ToasterProvider";
 
+const bengaliFont = Anek_Bangla({
+  subsets: ["bengali", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-bengali",
+  display: "swap",
+});
 export const metadata: Metadata = {
   title: "KiddoValley - Books for Kids",
   description: "Magical books for young readers",
@@ -53,7 +61,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html suppressHydrationWarning>
+    <html suppressHydrationWarning className={bengaliFont.variable}>
       <body>
         <Providers>
           {/* ✅ সেটিংস প্রপস হিসেবে পাঠানো হচ্ছে */}
