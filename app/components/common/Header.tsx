@@ -51,9 +51,8 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
 
   const navItems = [
     { name: "হোম", href: "/", color: "#D51B26" },
+    { name: "প্রোডাক্ট", href: "/products", color: "#36A43D" },
     { name: "আমাদের সম্পর্কে", href: "/about-us", color: "#36A43D" },
-    { name: "বিভাগসমূহ", href: "/categories", color: "#8859F8" },
-    { name: "নতুন আসা", href: "/new", color: "#1C08A9" },
     { name: "যোগাযোগ", href: "/contact-us", color: "#D51B26" },
   ];
 
@@ -160,7 +159,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
 
               <Link
                 href="/search"
-                className="hidden xs:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                className=" xs:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Search"
               >
                 <Search
