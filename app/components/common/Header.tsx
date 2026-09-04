@@ -16,8 +16,8 @@ import {
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGlobal } from "@/app/contexts/GlobalContext";
+import SearchModal from "../shared/SearchModal"; // ✅ নতুন ইম্পোর্ট
 
-// ✅ প্রপস টাইপ
 interface HeaderProps {
   logoUrl?: string | null;
   socialLinks?: {
@@ -33,6 +33,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
   const { themeMode, setThemeMode, cartCount, openCart, isCartOpen } =
     useGlobal();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // ✅ নতুন স্টেট
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -78,13 +79,12 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
       <header className="sticky top-0 z-50 transition-all duration-700 bg-cream-100 dark:bg-dark-surface border-b border-stone-200 dark:border-dark-border">
         <div className="container-md mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Logo – ডায়নামিক */}
+            {/* Logo – unchanged */}
             <Link
               href="/"
               className="flex items-center space-x-2 sm:space-x-3 group shrink-0"
             >
               {logoUrl ? (
-                // ✅ ডায়নামিক লোগো ইমেজ
                 <div className="relative w-32 h-10 sm:w-40 sm:h-12">
                   <Image
                     src={logoUrl}
@@ -97,7 +97,6 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
                   />
                 </div>
               ) : (
-                // ✅ ফ্যালব্যাক টেক্সট লোগো
                 <div className="flex items-center space-x-2">
                   <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md bg-gradient-to-br from-logo-red via-logo-purple to-logo-blue group-hover:scale-105 transition-transform duration-300">
                     <BookOpen className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -119,7 +118,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
               )}
             </Link>
 
-            {/* Desktop Navigation – অপরিবর্তিত */}
+            {/* Desktop Navigation – unchanged */}
             <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -147,7 +146,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
               })}
             </nav>
 
-            {/* Right Icons – অপরিবর্তিত */}
+            {/* Right Icons – সার্চ আইকনে নতুন অন-ক্লিক */}
             <div className="flex items-center space-x-1 sm:space-x-2">
               <button
                 onClick={toggleTheme}
@@ -157,16 +156,16 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
                 {getThemeIcon()}
               </button>
 
-              <Link
-                href="/search"
-                className=" xs:block p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+              <button
+                onClick={() => setIsSearchOpen(true)} // ✅ মোডাল ওপেন
+                className="cursor-pointer p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Search"
               >
                 <Search
                   size={16}
                   className="sm:w-[18px] sm:h-[18px] text-stone-600 dark:text-stone-400"
                 />
-              </Link>
+              </button>
 
               <button
                 onClick={openCart}
@@ -203,7 +202,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
         </div>
       </header>
 
-      {/* Mobile Menu – অপরিবর্তিত */}
+      {/* Mobile Menu – unchanged */}
       <AnimatePresence>
         {isMenuOpen && (
           <>
@@ -267,14 +266,16 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
                 </div>
               </nav>
               <div className="p-4 border-t border-stone-200 dark:border-dark-border">
-                <Link
-                  href="/search"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsSearchOpen(true);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 w-full"
                 >
                   <Search size={18} />
-                  <span>Search</span>
-                </Link>
+                  <span>খুঁজুন</span>
+                </button>
                 <Link
                   href="/account"
                   onClick={() => setIsMenuOpen(false)}
@@ -288,6 +289,12 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
           </>
         )}
       </AnimatePresence>
+
+      {/* ✅ সার্চ মোডাল */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </>
   );
 }

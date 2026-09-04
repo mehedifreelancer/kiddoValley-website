@@ -1,11 +1,16 @@
-"use client"; // ← mark as client component
+"use client";
 
 import React from "react";
+import { useSearchParams } from "next/navigation";
 import AllProductSection from "../components/shared/AllProductSection";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicGridSettings } from "../homePage.service";
 
 const Page = () => {
+  // ✅ URL থেকে search প্যারামিটার পড়ুন
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
   const {
     data: gridClasses,
     isLoading,
@@ -17,13 +22,13 @@ const Page = () => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Handle loading / error states (optional)
   if (isLoading) return <div>Loading…</div>;
   if (error) return <div>Error loading settings</div>;
 
   return (
     <div>
-      <AllProductSection gridClasses={gridClasses} />
+      {/* ✅ সার্চ কোয়েরি প্রপস হিসেবে পাঠানো হচ্ছে */}
+      <AllProductSection gridClasses={gridClasses} searchQuery={searchQuery} />
     </div>
   );
 };

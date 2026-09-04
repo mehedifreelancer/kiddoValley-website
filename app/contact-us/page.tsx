@@ -8,14 +8,15 @@ import {
   Phone,
   Facebook,
   Send,
-  CheckCircle,
-  AlertCircle,
   User,
   MessageSquare,
   MapPin,
   Clock,
   ArrowLeft,
 } from "lucide-react";
+
+import toast from "react-hot-toast";
+import { sendContactMessage } from "./contact.service";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -24,10 +25,7 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -40,33 +38,27 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
-    setErrorMessage("");
+    setLoading(true);
 
     try {
-      const res = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await sendContactMessage(formData);
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setStatus("success");
+      if (res.success) {
+        toast.success("আপনার মেসেজ সফলভাবে পাঠানো হয়েছে!");
         setFormData({ name: "", email: "", subject: "", message: "" });
-        setTimeout(() => setStatus("idle"), 5000);
       } else {
-        setStatus("error");
-        setErrorMessage(
-          data.error || "মেসেজ পাঠাতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
+        toast.error(
+          res.message ||
+            res.error ||
+            "মেসেজ পাঠাতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
         );
-        setTimeout(() => setStatus("idle"), 5000);
       }
-    } catch {
-      setStatus("error");
-      setErrorMessage("সার্ভার সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
-      setTimeout(() => setStatus("idle"), 5000);
+    } catch (err: any) {
+      toast.error(
+        err.message || "সার্ভার সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -334,7 +326,7 @@ export default function ContactPage() {
                     htmlFor="subject"
                     className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5"
                   >
-                    বিষয় <span className="text-[#E57373]">*</span>
+                    বিষয় <span className="text-[#E57373]">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500">
@@ -348,7 +340,7 @@ export default function ContactPage() {
                       onChange={handleChange}
                       required
                       className="w-full pl-10 pr-4 py-3 bg-white/40 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-[#8859F8]/40 focus:border-transparent transition-all"
-                      placeholder="বিষয় লিখুন"
+                      placeholder="বিষয় লিখুন"
                     />
                   </div>
                 </div>
@@ -378,29 +370,19 @@ export default function ContactPage() {
                 {/* Submit */}
                 <motion.button
                   type="submit"
-                  disabled={status === "loading"}
+                  disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`w-full py-3.5 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2 ${
-                    status === "loading"
+                    loading
                       ? "bg-gradient-to-r from-stone-400 to-stone-500 cursor-not-allowed"
                       : "bg-gradient-to-r from-[#8859F8] to-[#BA68C8] hover:shadow-lg hover:shadow-[#8859F8]/30"
                   }`}
                 >
-                  {status === "loading" ? (
+                  {loading ? (
                     <>
                       <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
                       পাঠানো হচ্ছে...
-                    </>
-                  ) : status === "success" ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      সফলভাবে পাঠানো হয়েছে!
-                    </>
-                  ) : status === "error" ? (
-                    <>
-                      <AlertCircle className="w-5 h-5" />
-                      {errorMessage || "ব্যর্থ হয়েছে"}
                     </>
                   ) : (
                     <>
@@ -409,58 +391,15 @@ export default function ContactPage() {
                     </>
                   )}
                 </motion.button>
-
-                {status === "success" && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center text-[#36A43D] text-sm font-medium"
-                  >
-                    ✓ আপনার মেসেজ সফলভাবে পাঠানো হয়েছে। আমরা শীঘ্রই উত্তর দেব।
-                  </motion.p>
-                )}
-
-                {status === "error" && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center text-[#E57373] text-sm font-medium"
-                  >
-                    ⚠{" "}
-                    {errorMessage ||
-                      "মেসেজ পাঠাতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"}
-                  </motion.p>
-                )}
               </form>
+              <p className="text-sm text-stone-400 dark:text-stone-500 mt-5 flex items-center justify-center gap-2">
+                {/* <span className="text-xl animate-pulse">✨</span>
+                "আপনার মেসেজ পাওয়ার পরপরই ইনশাআল্লাহ যত দ্রুত সম্ভব আমরা রেসপন্স
+                করবো।"
+                <span className="text-2xl animate-pulse">✨</span> */}
+              </p>
             </div>
           </motion.div>
-        </div>
-
-        {/* ===== Footer ===== */}
-        <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-stone-500 dark:text-stone-400 border-t border-stone-200 dark:border-dark-border pt-6">
-          <span>
-            শেষ হালনাগাদ:{" "}
-            {new Date().toLocaleDateString("bn-BD", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </span>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/return-policy"
-              className="hover:text-[#BA68C8] transition-colors"
-            >
-              রিফান্ড নীতি
-            </Link>
-            <Link
-              href="/"
-              className="hover:text-[#BA68C8] transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              হোমপেজে ফিরে যান
-            </Link>
-          </div>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { getPublicProducts, Product } from "@/app/products/product.service";
 import { getPublicGridSettings } from "@/app/homePage.service";
 
-// ✅ নিরাপদ ম্যাপিং ফাংশন – API প্রোডাক্টকে ProductCard-এর জন্য উপযুক্ত অবজেক্টে রূপান্তর
+// ✅ নিরাপদ ম্যাপিং ফাংশন – অপরিবর্তিত
 const mapProductToBook = (product: Product): any => {
   if (!product) {
     return {
@@ -65,7 +65,14 @@ const mapProductToBook = (product: Product): any => {
   };
 };
 
-export default function AllProductSection() {
+// ✅ নতুন প্রপস টাইপ
+interface AllProductSectionProps {
+  searchQuery?: string; // ← নতুন
+}
+
+export default function AllProductSection({
+  searchQuery = "",
+}: AllProductSectionProps) {
   // State for dynamic grid classes from layout settings
   const [gridClasses, setGridClasses] = useState(
     "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
@@ -81,7 +88,6 @@ export default function AllProductSection() {
         }
       })
       .catch(() => {
-        // fallback to default (already set)
         console.warn("Using default grid layout");
       });
 
@@ -90,6 +96,7 @@ export default function AllProductSection() {
     };
   }, []);
 
+  // ✅ সার্চ কোয়েরি দিয়ে ইনফিনিট কোয়েরি
   const {
     data,
     fetchNextPage,
@@ -97,9 +104,11 @@ export default function AllProductSection() {
     isFetchingNextPage,
     isLoading,
     isError,
+    refetch, // refetch যখন searchQuery পরিবর্তন হবে
   } = useInfiniteQuery({
-    queryKey: ["public-products"],
-    queryFn: ({ pageParam = 1 }) => getPublicProducts(pageParam, 12),
+    queryKey: ["public-products", searchQuery], // ← searchQuery অন্তর্ভুক্ত
+    queryFn: ({ pageParam = 1 }) =>
+      getPublicProducts(pageParam, 12, searchQuery), // ← search পাঠানো
     getNextPageParam: (lastPage) => {
       if (lastPage.pagination.page < lastPage.pagination.pages) {
         return lastPage.pagination.page + 1;
@@ -108,7 +117,13 @@ export default function AllProductSection() {
     },
     initialPageParam: 1,
     staleTime: 5 * 60 * 1000,
+    // যখন searchQuery পরিবর্তন হবে, তখন ডেটা রিফেচ হবে (queryKey কারণে)
   });
+
+  // ✅ যখন searchQuery পরিবর্তন হবে, প্রথম পেজ রিফেচ করুন
+  useEffect(() => {
+    refetch();
+  }, [searchQuery, refetch]);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -150,11 +165,33 @@ export default function AllProductSection() {
     );
   }
 
+  // ✅ খালি ফলাফল – সার্চ টার্ম সহ বার্তা
+  // ✅ খালি ফলাফল – সার্চ টার্ম সহ বার্তা + cute GIF
   if (products.length === 0) {
     return (
       <section className="">
         <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px] text-center">
-          <p className="text-gray-500">No products found.</p>
+          {/* ✅ Cute Animated GIF */}
+          <div className="flex justify-center mb-6">
+            <img
+              src="https://media.tenor.com/3bTxZ4Hd5cMAAAAi/empty-box.gif"
+              alt="Empty box"
+              className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
+            />
+          </div>
+          <p className="text-gray-500 text-lg">
+            {searchQuery ? (
+              <>
+                “
+                <span className="font-semibold text-stone-700 dark:text-stone-300">
+                  {searchQuery}
+                </span>
+                ” সার্চের সাথে মেলে এমন কোনো পণ্য পাওয়া যায়নি
+              </>
+            ) : (
+              "কোনো পণ্য পাওয়া যায়নি"
+            )}
+          </p>
         </div>
       </section>
     );
@@ -169,17 +206,29 @@ export default function AllProductSection() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-light text-stone-800 dark:text-stone-200 mb-1">
-            সব{" "}
-            <span className="font-semibold bg-gradient-to-r from-[#E57373] to-[#BA68C8] bg-clip-text text-transparent">
-              পণ্য
-            </span>
+            {searchQuery ? (
+              <>
+                <span className="font-semibold bg-gradient-to-r from-[#E57373] to-[#BA68C8] bg-clip-text text-transparent">
+                  “{searchQuery}”
+                </span>{" "}
+                এর জন্য ফলাফল
+              </>
+            ) : (
+              <>
+                সব{" "}
+                <span className="font-semibold bg-gradient-to-r from-[#E57373] to-[#BA68C8] bg-clip-text text-transparent">
+                  পণ্য
+                </span>
+              </>
+            )}
           </h2>
           <p className="text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
-            আমাদের সম্পূর্ণ সংগ্রহ দেখুন
+            {searchQuery
+              ? `${products.length} টি পণ্য পাওয়া গেছে`
+              : "আমাদের সম্পূর্ণ সংগ্রহ দেখুন"}
           </p>
         </motion.div>
-
-        {/* ✅ Dynamic grid classes applied here */}
+        {/* ✅ Dynamic grid classes */}
         <div className={gridClasses}>
           {products.map((product) => (
             <ProductCard
@@ -189,7 +238,6 @@ export default function AllProductSection() {
             />
           ))}
         </div>
-
         {hasNextPage && (
           <div ref={loadMoreRef} className="flex justify-center py-8">
             {isFetchingNextPage && (
