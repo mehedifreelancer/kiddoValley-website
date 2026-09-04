@@ -48,12 +48,20 @@ export default function HeroSection({ slides }: HeroSectionProps) {
           <SwiperSlide key={slide.id}>
             <div className="relative w-full h-full">
               {/* Background image */}
+              {/* Background image/color */}
               <div className="absolute inset-0 w-full h-full">
-                <img
-                  src={slide.bgImage}
-                  alt="Background"
-                  className="w-full h-full object-cover"
-                />
+                {slide.bgType === "color" && slide.bgColor ? (
+                  <div
+                    className="w-full h-full"
+                    style={{ background: slide.bgColor }}
+                  />
+                ) : (
+                  <img
+                    src={slide.bgImage}
+                    alt="Background"
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-black/10"></div>
               </div>
 
