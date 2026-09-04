@@ -85,14 +85,14 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                         {slide.firstTitle}
                       </span>
                       <span
-                        className={`block font-semibold mt-1 ${slide.secondTitleColor || "text-purple-600"}`}
+                        className={`block font-semibold mt-2 ${slide.secondTitleColor || "text-purple-600"}`}
                       >
                         {slide.secondTitle}
                       </span>
                     </h1>
 
                     {/* Description */}
-                    <p className="text-sm md:text-base text-stone-600 dark:text-stone-400 mb-4 md:mb-6 max-w-lg leading-relaxed">
+                    <p className="text-sm md:text-base text-white mb-4 md:mb-6 max-w-lg leading-relaxed">
                       {slide.description}
                     </p>
 

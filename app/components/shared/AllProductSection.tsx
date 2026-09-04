@@ -7,6 +7,7 @@ import ProductCard from "./ProductCard";
 import { useEffect, useRef, useState } from "react";
 import { getPublicProducts, Product } from "@/app/products/product.service";
 import { getPublicGridSettings } from "@/app/homePage.service";
+import Button from "./Button";
 
 // ✅ নিরাপদ ম্যাপিং ফাংশন – অপরিবর্তিত
 const mapProductToBook = (product: Product): any => {
@@ -68,10 +69,12 @@ const mapProductToBook = (product: Product): any => {
 // ✅ নতুন প্রপস টাইপ
 interface AllProductSectionProps {
   searchQuery?: string; // ← নতুন
+  onClearSearch?: () => void; // ← নতুন prop
 }
 
 export default function AllProductSection({
   searchQuery = "",
+  onClearSearch,
 }: AllProductSectionProps) {
   // State for dynamic grid classes from layout settings
   const [gridClasses, setGridClasses] = useState(
@@ -186,12 +189,20 @@ export default function AllProductSection({
                 <span className="font-semibold text-stone-700 dark:text-stone-300">
                   {searchQuery}
                 </span>
-                ” সার্চের সাথে মেলে এমন কোনো পণ্য পাওয়া যায়নি
+                ” সার্চের সাথে মেলে এমন কোনো পণ্য পাওয়া যায়নি
               </>
             ) : (
-              "কোনো পণ্য পাওয়া যায়নি"
+              "কোনো পণ্য পাওয়া যায়নি"
             )}
           </p>
+
+          {searchQuery && onClearSearch && (
+            <div className="flex justify-center mt-4">
+              <Button variant="outline" size="sm" onClick={onClearSearch}>
+                ঠিকাছে ফিরে যাই
+              </Button>
+            </div>
+          )}
         </div>
       </section>
     );
@@ -209,7 +220,7 @@ export default function AllProductSection({
             {searchQuery ? (
               <>
                 <span className="font-semibold bg-gradient-to-r from-[#E57373] to-[#BA68C8] bg-clip-text text-transparent">
-                  “{searchQuery}”
+                  "{searchQuery}"
                 </span>{" "}
                 এর জন্য ফলাফল
               </>
@@ -224,10 +235,11 @@ export default function AllProductSection({
           </h2>
           <p className="text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
             {searchQuery
-              ? `${products.length} টি পণ্য পাওয়া গেছে`
+              ? `${products.length} টি পণ্য পাওয়া গেছে`
               : "আমাদের সম্পূর্ণ সংগ্রহ দেখুন"}
           </p>
         </motion.div>
+
         {/* ✅ Dynamic grid classes */}
         <div className={gridClasses}>
           {products.map((product) => (
@@ -238,11 +250,21 @@ export default function AllProductSection({
             />
           ))}
         </div>
+
         {hasNextPage && (
           <div ref={loadMoreRef} className="flex justify-center py-8">
             {isFetchingNextPage && (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
             )}
+          </div>
+        )}
+
+        {/* ✅ সার্চ থাকলে নিচে ফিরে যাওয়ার বাটন */}
+        {searchQuery && onClearSearch && (
+          <div className="flex justify-center mt-10">
+            <Button variant="outline" size="sm" onClick={onClearSearch}>
+              ঠিকাছে ফিরে যাই
+            </Button>
           </div>
         )}
       </div>

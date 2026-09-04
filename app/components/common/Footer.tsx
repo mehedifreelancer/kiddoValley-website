@@ -131,8 +131,7 @@ export default function Footer({
             </div>
 
             <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
-              Where stories come alive and imaginations soar. Discover the magic
-              of reading with our curated collection.
+              {footerText || defaultFooterText}
             </p>
 
             {activeSocials.length > 0 && (
@@ -218,11 +217,11 @@ export default function Footer({
 
         <div className="mt-12 pt-6 border-t border-stone-300 dark:border-dark-border flex flex-col md:flex-row justify-between items-center relative">
           <p className="text-xs text-stone-500 dark:text-stone-500">
-            {footerText || defaultFooterText}
+            {defaultFooterText}
           </p>
           <p className="text-xs text-stone-500 dark:text-stone-500 flex items-center">
-            Made with <Heart size={12} className="mx-1 text-logo-red" /> for
-            young readers
+            Powered by <Heart size={12} className="mx-1 text-logo-red" /> for
+            Oxaton IT
           </p>
         </div>
       </div>

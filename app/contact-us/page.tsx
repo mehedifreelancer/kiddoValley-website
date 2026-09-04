@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Mail,
   Phone,
@@ -12,11 +11,32 @@ import {
   MessageSquare,
   MapPin,
   Clock,
-  ArrowLeft,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
 import { sendContactMessage } from "./contact.service";
+import {
+  getPublicWebSettings,
+  WebSettings,
+} from "../web-stetings/webSettings.service";
+
+// একটাই জায়গায় ডিফল্ট রাখলাম, যাতে দুইবার লিখতে না হয়
+const DEFAULT_CONTACT_INFO: ContactInfo = {
+  phone: "০১৭xxxxxxx",
+  email: "me@xyz.com",
+  facebookPage: "My Facebook Page",
+  whatsapp: "০১৭xxxxxxx",
+  address: "-",
+  workingHours: "সকাল ৯টা – রাত ৯টা",
+  workingHoursWeekend: "সকাল ১০টা – রাত ৮টা (শুক্রবার ও শনিবার)",
+};
+
+const DEFAULT_SOCIAL_LINKS = {
+  facebook: "https://facebook.com/kiddovalley",
+  instagram: "",
+  youtube: "",
+  website: "",
+};
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -26,6 +46,30 @@ export default function ContactPage() {
     message: "",
   });
   const [loading, setLoading] = useState(false);
+  const [webSettings, setWebSettings] = useState<WebSettings | null>(null);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  // web-settings API থেকে contactInfo fetch করা হচ্ছে
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoadingSettings(true);
+      try {
+        const settings = await getPublicWebSettings();
+        setWebSettings(settings);
+      } catch (error) {
+        console.error("Failed to fetch web settings:", error);
+        setWebSettings({
+          logoUrl: null,
+          socialLinks: DEFAULT_SOCIAL_LINKS,
+          footerText: "",
+          contactInfo: DEFAULT_CONTACT_INFO,
+        });
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -61,6 +105,12 @@ export default function ContactPage() {
       setLoading(false);
     }
   };
+
+  // API থেকে না এলে ডিফল্ট ব্যবহার হবে
+  const contactInfo: ContactInfo =
+    webSettings?.contactInfo || DEFAULT_CONTACT_INFO;
+  const facebookHref =
+    webSettings?.socialLinks?.facebook || DEFAULT_SOCIAL_LINKS.facebook;
 
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:py-12">
@@ -145,114 +195,119 @@ export default function ContactPage() {
                 সরাসরি যোগাযোগ
               </h2>
 
-              {/* Phone */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
-                <div className="p-3 rounded-full bg-[#36A43D]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Phone className="w-5 h-5 text-[#36A43D]" />
+              {loadingSettings ? (
+                <div className="space-y-4 animate-pulse">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-16 rounded-xl bg-white/10 dark:bg-white/5"
+                    />
+                  ))}
                 </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    ফোন
-                  </p>
-                  <a
-                    href="tel:+8801781873064"
-                    className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#36A43D] transition-colors"
-                  >
-                    ০১৭৮১-৮৭৩০৬৪
-                  </a>
-                </div>
-              </div>
+              ) : (
+                <>
+                  {/* Phone */}
+                  {contactInfo.phone && (
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
+                      <div className="p-3 rounded-full bg-[#36A43D]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Phone className="w-5 h-5 text-[#36A43D]" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
+                          ফোন
+                        </p>
+                        <a
+                          href={`tel:${contactInfo.phone}`}
+                          className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#36A43D] transition-colors"
+                        >
+                          {contactInfo.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Email */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
-                <div className="p-3 rounded-full bg-[#8859F8]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Mail className="w-5 h-5 text-[#8859F8]" />
-                </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    ইমেইল
-                  </p>
-                  <a
-                    href="mailto:return@kiddovalley.com"
-                    className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#8859F8] transition-colors"
-                  >
-                    return@kiddovalley.com
-                  </a>
-                </div>
-              </div>
+                  {/* Email */}
+                  {contactInfo.email && (
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
+                      <div className="p-3 rounded-full bg-[#8859F8]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Mail className="w-5 h-5 text-[#8859F8]" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
+                          ইমেইল
+                        </p>
+                        <a
+                          href={`mailto:${contactInfo.email}`}
+                          className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#8859F8] transition-colors"
+                        >
+                          {contactInfo.email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Facebook */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
-                <div className="p-3 rounded-full bg-[#1C08A9]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Facebook className="w-5 h-5 text-[#1C08A9]" />
-                </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    ফেসবুক পেজ
-                  </p>
-                  <a
-                    href="https://facebook.com/kiddovalley"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#1C08A9] transition-colors"
-                  >
-                    Kiddo Valley
-                  </a>
-                </div>
-              </div>
+                  {/* WhatsApp */}
+                  {contactInfo.whatsapp && (
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
+                      <div className="p-3 rounded-full bg-[#36A43D]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Phone className="w-5 h-5 text-[#36A43D]" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
+                          হোয়াটসঅ্যাপ
+                        </p>
+                        <a
+                          href={`https://wa.me/${contactInfo.whatsapp.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#36A43D] transition-colors"
+                        >
+                          {contactInfo.whatsapp}
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
-              {/* WhatsApp */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all group">
-                <div className="p-3 rounded-full bg-[#36A43D]/20 flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Phone className="w-5 h-5 text-[#36A43D]" />
-                </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    হোয়াটসঅ্যাপ
-                  </p>
-                  <a
-                    href="https://wa.me/8801781873064"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-800 dark:text-stone-200 font-medium hover:text-[#36A43D] transition-colors"
-                  >
-                    ০১৭৮১-৮৭৩০৬৪
-                  </a>
-                </div>
-              </div>
+                  {/* Working Hours */}
+                  {contactInfo.workingHours && (
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5">
+                      <div className="p-3 rounded-full bg-[#E57373]/20 flex-shrink-0">
+                        <Clock className="w-5 h-5 text-[#E57373]" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
+                          কর্মঘণ্টা
+                        </p>
+                        <p className="text-stone-800 dark:text-stone-200 font-medium">
+                          {contactInfo.workingHours}
+                        </p>
+                        {contactInfo.workingHoursWeekend && (
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
+                            {contactInfo.workingHoursWeekend}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Working Hours */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5">
-                <div className="p-3 rounded-full bg-[#E57373]/20 flex-shrink-0">
-                  <Clock className="w-5 h-5 text-[#E57373]" />
-                </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    কর্মঘণ্টা
-                  </p>
-                  <p className="text-stone-800 dark:text-stone-200 font-medium">
-                    সকাল ৯টা – রাত ৯টা
-                  </p>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    (শুক্রবার ও শনিবার সকাল ১০টা – রাত ৮টা)
-                  </p>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5">
-                <div className="p-3 rounded-full bg-[#BA68C8]/20 flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-[#BA68C8]" />
-                </div>
-                <div>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
-                    ঠিকানা
-                  </p>
-                  <p className="text-stone-800 dark:text-stone-200 font-medium">
-                    ঢাকা, বাংলাদেশ
-                  </p>
-                </div>
-              </div>
+                  {/* Location */}
+                  {contactInfo.address && (
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5">
+                      <div className="p-3 rounded-full bg-[#BA68C8]/20 flex-shrink-0">
+                        <MapPin className="w-5 h-5 text-[#BA68C8]" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium">
+                          ঠিকানা
+                        </p>
+                        <p className="text-stone-800 dark:text-stone-200 font-medium">
+                          {contactInfo.address}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </motion.div>
 
@@ -392,12 +447,6 @@ export default function ContactPage() {
                   )}
                 </motion.button>
               </form>
-              <p className="text-sm text-stone-400 dark:text-stone-500 mt-5 flex items-center justify-center gap-2">
-                {/* <span className="text-xl animate-pulse">✨</span>
-                "আপনার মেসেজ পাওয়ার পরপরই ইনশাআল্লাহ যত দ্রুত সম্ভব আমরা রেসপন্স
-                করবো।"
-                <span className="text-2xl animate-pulse">✨</span> */}
-              </p>
             </div>
           </motion.div>
         </div>

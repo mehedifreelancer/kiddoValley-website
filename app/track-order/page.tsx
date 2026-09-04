@@ -24,8 +24,9 @@ import toast from "react-hot-toast";
 import { useSearchOrders } from "./useTrackOrder";
 import { Order, TimelineStep, trackConsignment } from "./trackOrder.service";
 import { phoneSchema } from "./trackOrder.schema";
+import OrderCardSkeleton from "../components/skeleton/OrderCardSkeleton";
 
-// ===== Enhanced Timeline Component =====
+// ===== Enhanced Timeline Component (অপরিবর্তিত) =====
 const EnhancedTimeline = ({ steps }: { steps: TimelineStep[] }) => {
   const completedCount = steps.filter((s) => s.completed).length;
   const total = steps.length;
@@ -268,17 +269,17 @@ export default function TrackOrderPage() {
     }
   }, [phoneParam]);
 
-  // ৩. ম্যানুয়াল ইনপুটে `searchTriggered` রিসেট (যাতে বাটন ক্লিক ছাড়া API না কল হয়)
+  // ৩. ম্যানুয়াল ইনপুটে `searchTriggered` রিসেট (যাতে বাটন ক্লিক ছাড়া API না কল হয়)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const digitsOnly = rawVal.replace(/\D/g, "");
     const sanitized = digitsOnly.slice(0, 14);
     setPhone(sanitized);
-    autoSearchDone.current = false; // ইউজার ম্যানুয়ালি পরিবর্তন করলে অটো ফ্ল্যাগ রিসেট
-    setSearchTriggered(false); // আগের সার্চ রিসেট, যাতে বাটন ক্লিক না করলে API কল না হয়
+    autoSearchDone.current = false;
+    setSearchTriggered(false);
   };
 
-  // ৪. সার্চ কুয়েরি (TanStack Query)
+  // ৪. সার্চ কুয়েরি (TanStack Query)
   const {
     data: orders,
     isLoading: searchLoading,
@@ -286,6 +287,10 @@ export default function TrackOrderPage() {
   } = useSearchOrders(phone, searchTriggered);
 
   // ৫. সার্চ বাটন ক্লিক
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSearch();
+  };
   const handleSearch = () => {
     const trimmedPhone = phone.trim();
     const result = phoneSchema.safeParse(trimmedPhone);
@@ -336,12 +341,15 @@ export default function TrackOrderPage() {
             অর্ডার ট্র্যাক করুন
           </h1>
           <p className="text-stone-500 dark:text-stone-400 mt-1">
-            আপনার ফোন নম্বর দিয়ে অর্ডার খুঁজুন
+            আপনার ফোন নম্বর দিয়ে অর্ডার খুঁজুন
           </p>
         </div>
 
         {/* Search Form */}
-        <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/30 dark:border-white/10">
+        <form
+          onSubmit={handleSubmit}
+          className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/30 dark:border-white/10"
+        >
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <input
@@ -357,9 +365,9 @@ export default function TrackOrderPage() {
               />
             </div>
             <Button
+              type="submit"
               variant="primary"
               size="md"
-              onClick={handleSearch}
               loading={searchLoading}
               disabled={searchLoading}
               className="px-8 py-3 text-sm sm:text-base mt-1 sm:mt-0"
@@ -369,88 +377,98 @@ export default function TrackOrderPage() {
             </Button>
           </div>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-6 sm:mt-3 text-center">
-            আপনার ফোন নম্বরটি স্বয়ংক্রিয়ভাবে সেভ করা হয়েছে
+            আপনার ফোন নম্বরটি স্বয়ংক্রিয়ভাবে সেভ করা হয়েছে
           </p>
-        </div>
+        </form>
 
         {/* Results */}
+        {/* Results */}
         {searchTriggered && (
-          <div className="mt-8 space-y-4">
-            {searchError ? (
-              <div className="text-center py-12 text-red-500 dark:text-red-400">
-                <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">সার্চ করতে সমস্যা হয়েছে</p>
+          <>
+            {searchLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-10 h-10 animate-spin text-[#BA68C8]" />
               </div>
-            ) : orders && orders.length > 0 ? (
-              orders.map((order) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-lg p-5 sm:p-6 border border-white/30 dark:border-white/10 hover:shadow-xl transition-shadow"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                      <p className="text-sm text-stone-500 dark:text-stone-400">
-                        Invoice #{order.invoiceNo}
-                      </p>
-                      <p className="text-lg font-medium text-stone-800 dark:text-stone-200">
-                        {order.customerName}
-                      </p>
-                      <p className="text-sm text-stone-600 dark:text-stone-300">
-                        ৳{order.total.toFixed(2)}
-                      </p>
-                      <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-                      <span
-                        className={`text-xs font-medium px-3 py-1 rounded-full ${
-                          order.orderStatus === "new"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                            : order.orderStatus === "confirmed"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                        }`}
-                      >
-                        {order.orderStatus === "new"
-                          ? "অপেক্ষমান"
-                          : order.orderStatus === "confirmed"
-                            ? "নিশ্চিত"
-                            : "বাতিল"}
-                      </span>
-                      {order.orderStatus === "new" ? (
-                        <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          অ্যাডমিন অনুমোদনের অপেক্ষায়
-                        </span>
-                      ) : order.orderStatus === "confirmed" &&
-                        order.pathaoConsignmentId ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleTrackClick(order)}
-                          loading={
-                            trackingLoading && selectedOrder?.id === order.id
-                          }
-                          className="w-full sm:w-auto"
-                        >
-                          <Truck className="w-4 h-4 mr-1" />
-                          ট্র্যাক করুন
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                </motion.div>
-              ))
             ) : (
-              <div className="text-center py-12 text-stone-500 dark:text-stone-400">
-                <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">কোনো অর্ডার পাওয়া যায়নি</p>
+              <div className="mt-8 space-y-4">
+                {searchError ? (
+                  <div className="text-center py-12 text-red-500 dark:text-red-400">
+                    <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">সার্চ করতে সমস্যা হয়েছে</p>
+                  </div>
+                ) : orders && orders.length > 0 ? (
+                  orders.map((order) => (
+                    <motion.div
+                      key={order.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-lg p-5 sm:p-6 border border-white/30 dark:border-white/10 hover:shadow-xl transition-shadow"
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <p className="text-sm text-stone-500 dark:text-stone-400">
+                            Invoice #{order.invoiceNo}
+                          </p>
+                          <p className="text-lg font-medium text-stone-800 dark:text-stone-200">
+                            {order.customerName}
+                          </p>
+                          <p className="text-sm text-stone-600 dark:text-stone-300">
+                            ৳{order.total.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                          <span
+                            className={`text-xs font-medium px-3 py-1 rounded-full ${
+                              order.orderStatus === "new"
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                : order.orderStatus === "confirmed"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                            }`}
+                          >
+                            {order.orderStatus === "new"
+                              ? "অপেক্ষমান"
+                              : order.orderStatus === "confirmed"
+                                ? "নিশ্চিত"
+                                : "বাতিল"}
+                          </span>
+                          {order.orderStatus === "new" ? (
+                            <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              অ্যাডমিন অনুমোদনের অপেক্ষায়
+                            </span>
+                          ) : order.orderStatus === "confirmed" &&
+                            order.pathaoConsignmentId ? (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleTrackClick(order)}
+                              loading={
+                                trackingLoading &&
+                                selectedOrder?.id === order.id
+                              }
+                              className="w-full sm:w-auto"
+                            >
+                              <Truck className="w-4 h-4 mr-1" />
+                              ট্র্যাক করুন
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-stone-500 dark:text-stone-400">
+                    <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">কোনো অর্ডার পাওয়া যায়নি</p>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -489,7 +507,7 @@ export default function TrackOrderPage() {
         ) : (
           <div className="text-center py-12 text-stone-500 dark:text-stone-400">
             <AlertCircle className="w-12 h-12 mx-auto mb-3" />
-            <p>ট্র্যাকিং তথ্য পাওয়া যায়নি</p>
+            <p>ট্র্যাকিং তথ্য পাওয়া যায়নি</p>
           </div>
         )}
       </Modal>

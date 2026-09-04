@@ -19,13 +19,16 @@ import {
   getWorksheetDownloadUrl,
 } from "./worksheet.service";
 import { WorksheetItem } from "./worksheet.types";
+import ListCardSkeleton from "../components/skeleton/ListCardSkeleton";
+import ListingPageSkeleton from "../components/skeleton/ListingPageSkeleton";
 
 // ---------- মূল পেজ ----------
 export default function WorksheetsPage() {
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [worksheets, setWorksheets] = useState<WorksheetItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // ✅ প্রথমবার mount হওয়ার loading vs পরের সার্চ loading আলাদা করার জন্য
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedWorksheet, setSelectedWorksheet] =
     useState<WorksheetItem | null>(null);
@@ -35,32 +38,28 @@ export default function WorksheetsPage() {
   const [page] = useState(1);
   const limit = 20;
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
+  // reusable fetch — query সরাসরি প্যারামিটার হিসেবে নেয়,
+  // কোনো intermediate state (debouncedSearch) এর উপর নির্ভর করে না
+  const fetchWorksheets = async (query: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getPublicWorksheets(page, limit, query);
+      setWorksheets(response.data || []);
+    } catch (err: any) {
+      setError(err.message || "কিছু একটা ভুল হয়েছে");
+    } finally {
+      setLoading(false);
+      // প্রথম fetch শেষ হওয়ার পর থেকে আর initial load ধরা হবে না
+      setIsInitialLoad(false);
+    }
+  };
 
-  // Fetch data when search or page changes
+  // প্রথমবার mount হলে সব ওয়ার্কশীট আনবে (খালি সার্চ দিয়ে)
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getPublicWorksheets(
-          page,
-          limit,
-          debouncedSearch,
-        );
-        setWorksheets(response.data || []);
-      } catch (err: any) {
-        setError(err.message || "কিছু একটা ভুল হয়েছে");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [debouncedSearch, page, limit]);
+    fetchWorksheets("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Preview handler – browser এ inline দেখাবে (এখানে download হবে না, শুধু view)
   const handlePreview = (worksheet: WorksheetItem) => {
@@ -80,15 +79,25 @@ export default function WorksheetsPage() {
     } finally {
       // navigation asynchronous, তাই সামান্য delay দিয়ে loading state reset করা হচ্ছে
       setTimeout(() => setDownloadingId(null), 1500);
-      toast.success("ডাউনলোড হয়েছে !");
+      toast.success("ডাউনলোড হয়েছে !");
     }
   };
 
-  // সার্চ ফর্ম সাবমিট
+  // সার্চ ফর্ম সাবমিট — এখানেই একমাত্র জায়গা যেখান থেকে সার্চ API কল হবে
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setDebouncedSearch(search);
+    fetchWorksheets(search);
   };
+
+  // ✅ প্রথম লোডে পুরো পেজ (heading + form + list) skeleton দেখাবে
+  if (isInitialLoad && loading) {
+    return (
+      <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:py-12">
+        <div className="fixed inset-0 bg-gradient-to-br from-[#E57373]/10 via-[#BA68C8]/10 to-[#9575CD]/10 dark:from-[#E57373]/5 dark:via-[#BA68C8]/5 dark:to-[#9575CD]/5 backdrop-blur-xl -z-10" />
+        <ListingPageSkeleton itemCount={5} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:py-12">
@@ -126,6 +135,8 @@ export default function WorksheetsPage() {
               type="submit"
               variant="primary"
               size="md"
+              loading={loading}
+              disabled={loading}
               className="px-8 py-3 text-sm sm:text-base mt-1 sm:mt-0"
             >
               <Search className="w-5 h-5 mr-2" />
@@ -136,9 +147,8 @@ export default function WorksheetsPage() {
 
         {/* Results */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-10 h-10 animate-spin text-[#BA68C8]" />
-          </div>
+          // ✅ সার্চ করার সময় শুধু লিস্ট অংশ skeleton হবে, form/heading থাকবে
+          <ListCardSkeleton count={5} />
         ) : error ? (
           <div className="text-center py-12 text-red-500 dark:text-red-400">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -173,7 +183,7 @@ export default function WorksheetsPage() {
                     className="flex-1 sm:flex-none"
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    ওয়ার্কশীট দেখুন
+                    ওয়ার্কশীট দেখুন
                   </Button>
                   <Button
                     variant="outline"
@@ -197,6 +207,18 @@ export default function WorksheetsPage() {
           <div className="text-center py-12 text-stone-500 dark:text-stone-400">
             <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-lg">কোনো ওয়ার্কশীট পাওয়া যায়নি</p>
+            <div className="flex justify-center">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSearch("");
+                  fetchWorksheets("");
+                }}
+                className="mt-4"
+              >
+                ঠিকাছে ফিরে যাই
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -12,6 +12,8 @@ import {
   Heart,
   ChevronRight,
   Star,
+  User,
+  MessageCircle,
 } from "lucide-react";
 import Button from "../components/shared/Button";
 
@@ -33,9 +35,33 @@ const AnimatedSection = ({ children, delay = 0 }: any) => {
 
 // ===== Main Component =====
 export default function AboutPage() {
+  // রিয়েল ফেসবুক কমেন্টগুলো
+  const testimonials = [
+    {
+      name: "Sneho UH",
+      comment:
+        "Alhamdulillah got the books with fast delivery and we loved it! ✨",
+    },
+    {
+      name: "অভিভাবক",
+      comment:
+        "আজকে বুমবুম আর মহাশূন্য বইদুটো হাতে পেলাম। বইগুলো খুবই ভালো লেগেছে আলহামদুলিল্লাহ। আমার ছেলে খুবই পছন্দ করেছে বইগুলো। অনেক ধন্যবাদ kiddoValley কে",
+    },
+    {
+      name: "অভিভাবক",
+      comment:
+        "আমার ছেলে অনেক খুশি।বইটা দেখে তার খুব ভালো লেগেছে। ধন্যবাদ এমন বইয়ের জন্য",
+    },
+    {
+      name: "অভিভাবক",
+      comment:
+        "এটা নিয়েছি,খুব সুন্দর, আরও ইউনিক কালেকশন আনার অনুরোধ,সামনে আরও নিবো ইনশাআল্লাহ",
+    },
+  ];
+
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:py-12">
-      {/* ===== Background ===== */}
+      {/* ===== Background (অপরিবর্তিত) ===== */}
       <div className="fixed inset-0 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-dark-bg dark:via-dark-surface dark:to-dark-elevated -z-10">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
@@ -96,12 +122,12 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
-            শিশুদের কল্পনার ডানা মেলার গল্প – Kiddo Valley-এর শুরু থেকে আজ
-            পর্যন্ত।
+            শিশুদের ডিজিটাল আসক্তি থেকে মুক্ত করে তাদের সক্রিয় ও স্বপ্নময়
+            ভবিষ্যৎ গড়ে তোলা—এই আমাদের অঙ্গীকার।
           </p>
         </motion.div>
 
-        {/* ===== Mission & Vision ===== */}
+        {/* ===== Mission & Vision (কনটেন্ট আপডেট) ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
           <AnimatedSection delay={0.1}>
             <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-3xl shadow-2xl p-8 border border-white/30 dark:border-white/10 h-full">
@@ -114,9 +140,10 @@ export default function AboutPage() {
                 </h2>
               </div>
               <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
-                প্রতিটি শিশুর হাতে একটি করে বই তুলে দেওয়া – যাতে তারা কল্পনার
-                রাজ্যে হারিয়ে যেতে পারে, নতুন জ্ঞান অর্জন করতে পারে এবং জীবনকে
-                সুন্দরভাবে দেখতে শেখে। আমরা বিশ্বাস করি, বই হলো সেরা বন্ধু।
+                প্রতিটি শিশুকে ডিভাইসের বাইরে এনে তাদের শারীরিক ও মানসিক বিকাশে
+                সহায়তা করা। আমরা চাই শিশুরা বই পড়ুক, খেলাধুলা করুক, আর কল্পনার
+                মাধ্যমে নতুন কিছু আবিষ্কার করুক—যাতে তারা গড়ে তোলে একটি সক্রিয়
+                ও উজ্জ্বল ভবিষ্যৎ।
               </p>
             </div>
           </AnimatedSection>
@@ -132,15 +159,16 @@ export default function AboutPage() {
                 </h2>
               </div>
               <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
-                বাংলাদেশের প্রতিটি ঘরে শিশুদের বইয়ের সংস্কৃতি ছড়িয়ে দেওয়া।
-                ডিজিটাল যুগেও যেন শিশুরা বইয়ের মায়া ভুলে না যায়, সেজন্য আমরা চাই
-                সহজলভ্য, মানসম্মত ও রঙিন বইয়ের ভাণ্ডার তৈরি করতে।
+                বাংলাদেশের শিশুরা যেন স্ক্রিনের বাইরে প্রকৃত জীবনকে উপভোগ করতে
+                শেখে—দৌড়ায়, খেলে, পড়ে, গল্প করে। Kiddo Valley চায় শিশুদের হাতে
+                তুলে দিতে এমন সব উপকরণ যা তাদের স্থির না রেখে সক্রিয় রাখে,
+                আনন্দ দেয়, আর স্বপ্ন দেখাতে শেখায়।
               </p>
             </div>
           </AnimatedSection>
         </div>
 
-        {/* ===== Our Story ===== */}
+        {/* ===== Our Story (কনটেন্ট আপডেট) ===== */}
         <AnimatedSection delay={0.3}>
           <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-3xl shadow-2xl p-8 md:p-12 border border-white/30 dark:border-white/10 mb-16">
             <div className="flex flex-col md:flex-row gap-8 items-center">
@@ -149,21 +177,22 @@ export default function AboutPage() {
                   আমাদের যাত্রা
                 </h2>
                 <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-base md:text-lg mb-4">
-                  Kiddo Valley শুরু হয়েছিল একটি ছোট স্বপ্ন থেকে – এমন একটি জায়গা
-                  তৈরি করা যেখানে শিশুরা খুঁজে পাবে তাদের প্রিয় গল্প, রঙিন চিত্র
-                  আর জ্ঞানভিত্তিক বই। আমরা গর্বিত যে আজ আমরা হাজার হাজার শিশুর
-                  কাছে পৌঁছাতে পেরেছি।
+                  Kiddo Valley শুরু হয়েছিল একটি ছোট স্বপ্ন থেকে—শিশুদের মোবাইল,
+                  ট্যাব আর গ্যাজেটের বাইরে টেনে এনে বই, খেলা, আর কল্পনার এক
+                  বিস্ময়কর জগতে নিয়ে যাওয়া। আমরা গর্বিত যে আজ আমরা হাজার হাজার
+                  পরিবারের কাছে পৌঁছাতে পেরেছি, যারা তাদের সন্তানদের জন্য
+                  সক্রিয় ও অর্থবহ সময় খুঁজে পান আমাদের মাধ্যমে।
                 </p>
                 <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-base md:text-lg">
-                  আমাদের সংগ্রহে রয়েছে দেশি-বিদেশি অসংখ্য বই, যা শিশুদের মানসিক
-                  বিকাশ ও সৃজনশীলতায় সহায়তা করে। আমরা চাই প্রতিটি শিশু যেন বইয়ের
-                  মাধ্যমে পৃথিবীকে জানতে পারে।
+                  আমাদের সংগ্রহে রয়েছে বই, গেমস, ক্রিয়েটিভ কার্যক্রম—যা শিশুদের
+                  মনন ও সৃজনশীলতায় ভিন্নতা আনে। আমরা চাই প্রতিটি শিশু যেন
+                  ডিজিটাল জগতের বাইরে প্রকৃত আনন্দ খুঁজে পায়।
                 </p>
               </div>
               <div className="flex-1 flex justify-center">
                 <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden shadow-xl border-4 border-white/50 dark:border-dark-border/50">
                   <Image
-                    src="/images/about-hero.jpg" // Replace with actual image path
+                    src="/images/about-hero.jpg"
                     alt="Kiddo Valley"
                     fill
                     className="object-cover"
@@ -175,50 +204,70 @@ export default function AboutPage() {
           </div>
         </AnimatedSection>
 
-        {/* ===== Statistics ===== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-          {[
-            { label: "বই", value: "৫,০০০+", icon: BookOpen },
-            { label: "পাঠক", value: "১০,০০০+", icon: Users },
-            { label: "পুরস্কার", value: "১২", icon: Award },
-            { label: "সন্তুষ্টি", value: "৯৮%", icon: Heart },
-          ].map((stat, idx) => (
-            <AnimatedSection key={idx} delay={0.1 * idx}>
-              <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-lg p-6 text-center border border-white/30 dark:border-white/10 transition-all hover:scale-105 hover:shadow-xl">
-                <stat.icon className="w-8 h-8 mx-auto mb-2 text-[#BA68C8] dark:text-[#E57373]" />
-                <p className="text-3xl font-bold text-stone-800 dark:text-stone-200">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-stone-600 dark:text-stone-400">
-                  {stat.label}
-                </p>
-              </div>
-            </AnimatedSection>
-          ))}
+        {/* ===== TESTIMONIALS SECTION (স্ট্যাটিস্টিক্সের বদলে) ===== */}
+        <div className="mb-16">
+          <AnimatedSection delay={0.25}>
+            <h2 className="text-3xl font-semibold text-center text-stone-800 dark:text-stone-200 mb-2">
+              অভিভাবকরা যা বলছেন
+            </h2>
+            <p className="text-center text-stone-500 dark:text-stone-400 mb-8">
+              আমাদের যাত্রার সবচেয়ে বড় প্রেরণা তাদের ভালোবাসা
+            </p>
+          </AnimatedSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {testimonials.map((item, idx) => (
+              <AnimatedSection key={idx} delay={0.1 * idx}>
+                <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl shadow-lg p-6 border border-white/30 dark:border-white/10 h-full flex flex-col transition-all hover:scale-[1.02] hover:shadow-xl">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 rounded-full bg-[#BA68C8]/10 dark:bg-[#E57373]/10">
+                      <User className="w-5 h-5 text-[#BA68C8] dark:text-[#E57373]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-stone-800 dark:text-stone-200">
+                        {item.name}
+                      </p>
+                      <div className="flex text-yellow-400 text-sm">
+                        {"★".repeat(5)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-stone-700 dark:text-stone-300 leading-relaxed italic">
+                      “{item.comment}”
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/20 dark:border-white/10 flex justify-end">
+                    <MessageCircle className="w-4 h-4 text-stone-400 dark:text-stone-500" />
+                  </div>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
 
-        {/* ===== Core Values ===== */}
+        {/* ===== Core Values (কনটেন্ট আপডেট) ===== */}
         <AnimatedSection delay={0.4}>
           <div className="text-center mb-8">
             <h2 className="text-3xl font-semibold text-stone-800 dark:text-stone-200">
-              আমাদের বিশ্বাস
+              আমাদের মূল বিশ্বাস
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {[
               {
-                title: "গুণগত মান",
-                desc: "শিশুদের জন্য শুধু ভালো বই নয়, সেরা বই। আমরা প্রতিটি বই যাচাই করে নিই।",
-                icon: Star,
-              },
-              {
-                title: "সাশ্রয়ী মূল্য",
-                desc: "প্রত্যেকের জন্য বই সহজলভ্য করতে আমরা সাশ্রয়ী মূল্যে বই সরবরাহ করি।",
+                title: "সক্রিয় জীবনযাত্রা",
+                desc: "শিশুদের শারীরিক ও মানসিক বিকাশকে প্রাধান্য দেওয়া, তাদের স্থির না রেখে সদা উদ্যমী রাখা।",
                 icon: Heart,
               },
               {
-                title: "বৈচিত্র্য",
-                desc: "বাংলা, ইংরেজি – সব ভাষার শিশুতোষ বই আমাদের সংগ্রহে আছে।",
+                title: "নিরাপদ ও মানসম্মত",
+                desc: "শিশুদের জন্য নিরাপদ, মানসম্মত ও আনন্দদায়ক সব কিছু নিশ্চিত করা—বই হোক বা খেলার সামগ্রী।",
+                icon: Star,
+              },
+              {
+                title: "বৈচিত্র্য ও উদ্ভাবন",
+                desc: "শিশুদের আগ্রহ ধরে রাখতে নতুন নতুন অনন্য কালেকশন আনা।",
                 icon: BookOpen,
               },
             ].map((item, idx) => (
@@ -237,20 +286,20 @@ export default function AboutPage() {
           </div>
         </AnimatedSection>
 
-        {/* ===== Call to Action ===== */}
+        {/* ===== Call to Action (অপরিবর্তিত) ===== */}
         <AnimatedSection delay={0.5}>
           <div className="backdrop-blur-xl bg-gradient-to-br from-[#E57373]/10 via-[#BA68C8]/10 to-[#9575CD]/10 dark:from-[#E57373]/5 dark:via-[#BA68C8]/5 dark:to-[#9575CD]/5 rounded-3xl shadow-2xl p-8 md:p-12 text-center border border-white/30 dark:border-white/10">
             <h2 className="text-3xl font-semibold text-stone-800 dark:text-stone-200 mb-4">
-              চলো, পড়ার অভিযান শুরু করি
+              চলো, ডিভাইসের বাইরে নতুন কিছু আবিষ্কার করি
             </h2>
             <p className="text-stone-700 dark:text-stone-300 max-w-2xl mx-auto mb-6">
-              আমাদের সংগ্রহ থেকে আপনার সন্তানের জন্য সেরা বই বেছে নিন। পড়ার
-              আনন্দকে বাড়ি পর্যন্ত পৌঁছে দিন।
+              আপনার সন্তানের জন্য সেরা বই, খেলার সামগ্রী ও ক্রিয়েটিভ উপকরণ বেছে
+              নিন। সক্রিয় ও আনন্দময় শৈশব গড়তে আজই শুরু করুন।
             </p>
             <div className="flex justify-center">
               <Link href="/products">
                 <Button variant="primary" size="lg" className="px-8 py-3">
-                  বই দেখুন
+                  সংগ্রহ দেখুন
                 </Button>
               </Link>
             </div>

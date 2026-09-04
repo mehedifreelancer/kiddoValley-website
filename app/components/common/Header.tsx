@@ -12,11 +12,13 @@ import {
   User,
   Search,
   BookOpen,
+  FileText,
+  Truck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGlobal } from "@/app/contexts/GlobalContext";
-import SearchModal from "../shared/SearchModal"; // ✅ নতুন ইম্পোর্ট
+import SearchModal from "../shared/SearchModal";
 
 interface HeaderProps {
   logoUrl?: string | null;
@@ -33,7 +35,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
   const { themeMode, setThemeMode, cartCount, openCart, isCartOpen } =
     useGlobal();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false); // ✅ নতুন স্টেট
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,10 +52,13 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
     setIsMenuOpen(false);
   }, [pathname]);
 
+  // ✅ নেভিগেশন আইটেম – "ফ্রি ওয়ার্কশীট" সহ
   const navItems = [
     { name: "হোম", href: "/", color: "#D51B26" },
     { name: "প্রোডাক্ট", href: "/products", color: "#36A43D" },
     { name: "আমাদের সম্পর্কে", href: "/about-us", color: "#36A43D" },
+    { name: "ফ্রি ওয়ার্কশীট", href: "/worksheets", color: "#BA68C8" },
+
     { name: "যোগাযোগ", href: "/contact-us", color: "#D51B26" },
   ];
 
@@ -118,7 +123,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
               )}
             </Link>
 
-            {/* Desktop Navigation – unchanged */}
+            {/* Desktop Navigation – "ফ্রি ওয়ার্কশীট" সহ */}
             <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -146,8 +151,17 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
               })}
             </nav>
 
-            {/* Right Icons – সার্চ আইকনে নতুন অন-ক্লিক */}
+            {/* ✅ Right Icons – "অর্ডার ট্র্যাক" বাটন (বাংলায়) */}
             <div className="flex items-center space-x-1 sm:space-x-2">
+              {/* ✅ Track Order বাটন – বাংলায় */}
+              <Link
+                href="/track-order"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#BA68C8] text-white hover:bg-[#AB47BC] transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <Truck className="w-4 h-4" />
+                <span>ট্র্যাক অর্ডার</span>
+              </Link>
+
               <button
                 onClick={toggleTheme}
                 className="p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200 cursor-pointer"
@@ -157,7 +171,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
               </button>
 
               <button
-                onClick={() => setIsSearchOpen(true)} // ✅ মোডাল ওপেন
+                onClick={() => setIsSearchOpen(true)}
                 className="cursor-pointer p-1.5 sm:p-2 rounded-md hover:bg-stone-100 dark:hover:bg-dark-elevated transition-all duration-200"
                 aria-label="Search"
               >
@@ -202,7 +216,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
         </div>
       </header>
 
-      {/* Mobile Menu – unchanged */}
+      {/* ✅ Mobile Menu – বাংলায় "অর্ডার ট্র্যাক" বাটন সহ */}
       <AnimatePresence>
         {isMenuOpen && (
           <>
@@ -263,6 +277,15 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
                       </Link>
                     );
                   })}
+                  {/* ✅ মোবাইল ড্রয়ারে "অর্ডার ট্র্যাক" – হাইলাইটেড */}
+                  <Link
+                    href="/track-order"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-[#BA68C8] hover:bg-[#AB47BC] transition-all duration-200"
+                  >
+                    <FileText className="w-5 h-5" />
+                    <span>অর্ডার ট্র্যাক</span>
+                  </Link>
                 </div>
               </nav>
               <div className="p-4 border-t border-stone-200 dark:border-dark-border">
@@ -290,7 +313,7 @@ export default function Header({ logoUrl, socialLinks }: HeaderProps) {
         )}
       </AnimatePresence>
 
-      {/* ✅ সার্চ মোডাল */}
+      {/* সার্চ মোডাল */}
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

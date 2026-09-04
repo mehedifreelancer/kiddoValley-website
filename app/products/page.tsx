@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AllProductSection from "../components/shared/AllProductSection";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicGridSettings } from "../homePage.service";
+import ProductsPageSkeleton from "../components/skeleton/Productspageskeleton";
 
 const Page = () => {
-  // ✅ URL থেকে search প্যারামিটার পড়ুন
+  const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
 
@@ -22,13 +23,21 @@ const Page = () => {
     gcTime: 10 * 60 * 1000,
   });
 
-  if (isLoading) return <div>Loading…</div>;
+  // ✅ স্পিনার/টেক্সটের বদলে ProductsPageSkeleton
+  if (isLoading) return <ProductsPageSkeleton />;
   if (error) return <div>Error loading settings</div>;
+
+  const handleClearSearch = () => {
+    router.push("/products");
+  };
 
   return (
     <div>
-      {/* ✅ সার্চ কোয়েরি প্রপস হিসেবে পাঠানো হচ্ছে */}
-      <AllProductSection gridClasses={gridClasses} searchQuery={searchQuery} />
+      <AllProductSection
+        gridClasses={gridClasses}
+        onClearSearch={handleClearSearch}
+        searchQuery={searchQuery}
+      />
     </div>
   );
 };

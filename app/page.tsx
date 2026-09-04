@@ -8,6 +8,7 @@ import {
   getPublicGridSettings,
   getPublicHeroSliders,
 } from "./homePage.service";
+import HomePageSkeleton from "./components/skeleton/Homepageskeleton";
 
 export default function Home() {
   const {
@@ -32,12 +33,9 @@ export default function Home() {
     gcTime: 10 * 60 * 1000,
   });
 
+  // ✅ স্পিনারের বদলে HomePageSkeleton
   if (slidesLoading || gridLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <HomePageSkeleton />;
   }
 
   if (slidesError || !slides || gridError) {
