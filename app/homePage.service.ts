@@ -86,6 +86,6 @@ export const getPublicGridSettings = async () => {
   }>("/public/web-settings/layout-settings"); // ✅ "web-settings" যোগ করুন
   return (
     res.data?.gridClasses ||
-    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 lg:gap-3 xl:gap-4" // ডিফল্ট গ্রিড ক্লাস
   );
 };

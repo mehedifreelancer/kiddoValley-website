@@ -210,7 +210,7 @@ export default function AllProductSection({
 
   return (
     <section className="">
-      <div className="container-md mx-auto px-4 sm:px-6 lg:px-8 my-[50px]">
+      <div className="container-md mx-auto px-1 md:px-4 sm:px-6 lg:px-8 my-[50px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

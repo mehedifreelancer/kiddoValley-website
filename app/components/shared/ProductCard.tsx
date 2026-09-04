@@ -414,7 +414,7 @@ export default function ProductCard({
 
           {/* Buttons */}
           {showButtons && (
-            <div className="px-3 pb-4 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-2">
+            <div className="px-1 pb-4 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-2">
               <Button
                 variant="primary"
                 size="sm"
