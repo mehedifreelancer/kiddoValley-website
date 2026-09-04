@@ -107,7 +107,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                     {/* CTA Buttons */}
                     <div className="flex flex-wrap gap-3 mb-2 md:mb-6 lg:mb-8">
                       <Link
-                        href="/books"
+                        href="/products"
                         className="group px-5 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg font-medium text-sm shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-1.5"
                       >
                         দেখুন

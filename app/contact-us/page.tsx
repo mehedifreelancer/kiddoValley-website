@@ -174,9 +174,9 @@ export default function ContactPage() {
             </span>{" "}
             করুন
           </h1>
-          <p className="text-lg sm:text-xl text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
-            আপনার যেকোনো প্রশ্ন, মতামত বা অভিযোগ জানাতে আমাদের সাথে যোগাযোগ
-            করুন। আমরা ২৪ ঘন্টার মধ্যে উত্তর দেব।
+          <p className="text-lg sm:text-lg text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
+            হোলসেল সম্পর্কিত তথ্য অথবা আপনার যেকোনো প্রশ্ন, মতামত বা অভিযোগ
+            জানাতে আমাদের সাথে যোগাযোগ করুন। ইনশা-আল্লাহ আমরা ২৪ ঘন্টার মধ্যে উত্তর দেব।
           </p>
         </motion.div>
 

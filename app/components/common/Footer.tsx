@@ -37,6 +37,9 @@ const quickLinks = [
   { name: "আমাদের সম্পর্কে", href: "/about-us" },
   { name: "প্রাইভেসি পলিসি", href: "/privacy-policy" },
   { name: "রিটার্ন পলিসি", href: "/return-policy" },
+  { name: "ফ্রি ওয়ার্কশীট", href: "/worksheets", color: "#BA68C8" },
+
+  { name: "যোগাযোগ", href: "/contact-us", color: "#D51B26" },
 ];
 
 export default function Footer({
@@ -60,7 +63,7 @@ export default function Footer({
   );
 
   return (
-    <footer className="bg-cream-200 relative dark:bg-dark-surface border-t border-stone-300 dark:border-dark-border overflow-hidden">
+    <footer className="bg-cream-200 relative dark:bg-dark-surface border-t border-stone-300 dark:border-dark-border overflow-hidden p-2 md:p-6">
       <div className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none">
         <div
           className="absolute bottom-0 right-0 w-full h-full rounded-full blur-2xl"
@@ -160,7 +163,7 @@ export default function Footer({
 
           <div>
             <h3 className="text-sm font-medium text-stone-800 dark:text-stone-200 mb-4">
-              কুইক লিংক
+              প্রয়োজনীয় লিংক
             </h3>
             <ul className="space-y-2">
               {quickLinks.map((item) => (

@@ -282,7 +282,7 @@ export default function ProductCard({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm hover:shadow-xl border border-stone-200/60 dark:border-dark-border/60 overflow-hidden transition-all duration-300 h-full flex flex-col mx-auto w-full"
+        className="group bg-white dark:bg-gray-900  rounded-2xl shadow-sm hover:shadow-xl border border-stone-200/60 dark:border-dark-border/60 overflow-hidden transition-all duration-300 h-full flex flex-col mx-auto w-full"
       >
         {/* Image & badges */}
         <div className="relative flex-shrink-0 bg-gradient-to-br from-rose-50/50 to-purple-50/50 dark:from-dark-surface/80 dark:to-dark-surface/60">
@@ -328,7 +328,7 @@ export default function ProductCard({
 
         {/* Variant info */}
         {totalVariants > 0 && (
-          <div className="p-3 pb-2 border-b border-stone-100 dark:border-dark-border/50">
+          <div className="p-2 md:p-3 pb-2 border-b border-stone-100 dark:border-dark-border/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                 <Layers
@@ -352,7 +352,7 @@ export default function ProductCard({
 
         {/* Content */}
         <div className="flex flex-col flex-grow">
-          <div className="px-3 pb-4">
+          <div className="px-2 md:px-3 pb-2 md:px-4">
             <Link href={`/products/${product.slug}`}>
               <h3 className="mt-1 text-lg font-bold text-stone-800 dark:text-stone-100 line-clamp-1 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-300">
                 {product.name}
@@ -360,8 +360,8 @@ export default function ProductCard({
               </h3>
             </Link>
 
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-xl font-bold text-rose-600 dark:text-rose-400">
+            <div className="flex items-baseline gap-1 md:gap-2 flex-wrap">
+              <span className="text-lg md:text-xl font-bold text-rose-600 dark:text-rose-400">
                 ৳ {discountedPrice.toFixed(2)}
               </span>
               {displayDiscount > 0 && (
@@ -376,7 +376,7 @@ export default function ProductCard({
               )}
             </div>
 
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
+            <div className="flex flex-wrap gap-1.5 mt-1 md:mt-2.5">
               {primaryKey && (
                 <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">
                   {primaryKey}:
@@ -407,14 +407,14 @@ export default function ProductCard({
                   )}
                 </>
               ) : (
-                <span className="text-xs text-gray-400">No variant</span>
+                <span className="text-xs text-gray-400">--</span>
               )}
             </div>
           </div>
 
           {/* Buttons */}
           {showButtons && (
-            <div className="px-1 pb-4 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-2">
+            <div className="px-1 lg:px-2 pb-[10px]  md:pb-3 flex gap-2 mt-auto border-t border-stone-100 dark:border-dark-border/50 pt-1 md:pt-2">
               <Button
                 variant="primary"
                 size="sm"

@@ -210,11 +210,11 @@ export default function AllProductSection({
 
   return (
     <section className="">
-      <div className="container-md mx-auto px-1 md:px-4 sm:px-6 lg:px-8 my-[50px]">
+      <div className="container-md mx-auto px-1 md:px-4 sm:px-6 lg:px-8 my-[30px] md:my-[50px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-6 md:mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-light text-stone-800 dark:text-stone-200 mb-1">
             {searchQuery ? (
