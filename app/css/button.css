@@ -25,7 +25,7 @@
 
 /* Primary button - Purple - NO JUMPING! */
 .btn-primary {
-  @apply bg-[#BA68C8] text-white shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] relative;
+  @apply bg-[#BA68C8] text-white shadow-[0_3px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)] md:shadow-[0_6px_0_#8E4C9E,0_8px_8px_rgba(0,0,0,0.3)]  relative;
 }
 
 /* Shimmer effect on hover */
@@ -55,7 +55,7 @@
 
 /* Secondary button - Blue - NO JUMPING! */
 .btn-secondary {
-  @apply bg-[#7986CB] text-white shadow-[0_6px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)] relative;
+  @apply bg-[#7986CB] text-white shadow-[0_3px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)] md:shadow-[0_6px_0_#5C6BC0,0_8px_8px_rgba(0,0,0,0.3)] relative;
 }
 
 /* Shimmer effect on hover */
@@ -85,7 +85,7 @@
 
 /* Size variants */
 .btn-sm {
-  @apply py-1 px-2 text-[12px] md:text-sm min-h-[24px];
+  @apply py-1 px-2 text-[10px] md:text-sm min-h-[24px];
 }
 
 .btn-md {

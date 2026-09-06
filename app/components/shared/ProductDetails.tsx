@@ -54,7 +54,10 @@ export default function ProductDetails({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const relatedSwiperRef = useRef<any>(null);
+  const [isRelatedBeginning, setIsRelatedBeginning] = useState(true);
+  const [isRelatedEnd, setIsRelatedEnd] = useState(false);
   // ✅ রিলেটেড প্রোডাক্ট ফেচ – শুধু একবার (ডুপ্লিকেট কল বন্ধ)
   const fetchedRef = useRef(false);
   useEffect(() => {
@@ -85,12 +88,21 @@ export default function ProductDetails({
     : null;
 
   // ===== সব ইমেজ =====
+  // ===== সব ইমেজ =====
   const allImages = useMemo(() => {
     const imgs: string[] = [];
     if (product?.thumbnailImage) imgs.push(product.thumbnailImage);
     if (product?.variants && Array.isArray(product.variants)) {
-      product.variants.forEach((v) => {
-        if (v.imgUrl && !imgs.includes(v.imgUrl)) imgs.push(v.imgUrl);
+      product.variants.forEach((v: any) => {
+        // ✅ imgUrls (পুরো অ্যারে) থাকলে সেটা ব্যবহার করুন, না থাকলে পুরনো imgUrl-এ fallback
+        const urls: string[] = v.imgUrls?.length
+          ? v.imgUrls
+          : v.imgUrl
+            ? [v.imgUrl]
+            : [];
+        urls.forEach((url) => {
+          if (!imgs.includes(url)) imgs.push(url);
+        });
       });
     }
     return imgs;
@@ -443,6 +455,9 @@ export default function ProductDetails({
           <div className="relative aspect-[7/5] md:aspect-[5/5] lg:aspect-[5/5] w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#E57373]/10 to-[#BA68C8]/10">
             <Swiper
               onSwiper={(swiper) => (mainSwiperRef.current = swiper)}
+              onSlideChange={(swiper) =>
+                setActiveSlideIndex(swiper.activeIndex)
+              } // 👈 যোগ করুন
               spaceBetween={10}
               navigation={{
                 prevEl: ".custom-swiper-button-prev",
@@ -457,15 +472,15 @@ export default function ProductDetails({
             >
               {mainSlides.map((slide, idx) => (
                 <SwiperSlide key={idx}>
-                  <div className="relative w-full h-full">
+                  <div className="relative w-full h-full overflow-hidden rounded-xl bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
                     {slide.type === "image" ? (
                       <Image
                         src={slide.url}
                         alt={`${product.name} - ${idx + 1}`}
                         fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        unoptimized
+                        priority={idx === 0}
+                        className="object-cover transition-transform duration-500 ease-out hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 600px"
                       />
                     ) : (
                       <>
@@ -474,9 +489,11 @@ export default function ProductDetails({
                           alt={`Video - ${product.name}`}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          unoptimized
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 600px"
                         />
+                        {/* হালকা ডার্ক ওভারলে, প্লে বাটনটা আরও স্পষ্ট বোঝাতে */}
+                        <div className="absolute inset-0 bg-black/20" />
+
                         <div
                           className="absolute inset-0 flex items-center justify-center cursor-pointer group"
                           onClick={(e) => {
@@ -484,8 +501,8 @@ export default function ProductDetails({
                             handleVideoOpen();
                           }}
                         >
-                          <div className="w-10 h-10 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center text-black dark:text-white transition-all group-hover:scale-110">
-                            <Play size={14} className="fill-current ml-1" />
+                          <div className="w-14 h-14 rounded-full bg-white/90 dark:bg-black/70 backdrop-blur-md flex items-center justify-center text-black dark:text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:bg-white dark:group-hover:bg-black ring-2 ring-white/40">
+                            <Play size={20} className="fill-current ml-1" />
                           </div>
                         </div>
                       </>
@@ -522,53 +539,71 @@ export default function ProductDetails({
           </div>
 
           {/* থাম্বনেইল */}
+          {/* থাম্বনেইল */}
+          {/* থাম্বনেইল */}
           {thumbSlides.length > 1 && (
-            <div className="mt-1 md:mt-2">
+            <div className="mt-2 md:mt-3">
               <Swiper
                 onSwiper={(swiper) => setThumbSwiper(swiper)}
-                spaceBetween={1}
+                spaceBetween={8}
                 slidesPerView={4}
                 freeMode={true}
                 watchSlidesProgress={true}
                 modules={[FreeMode, Navigation, Thumbs]}
                 className="thumbs-swiper"
               >
-                {thumbSlides.map((slide, idx) => (
-                  <SwiperSlide key={idx}>
-                    <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden border-2 border-transparent hover:border-rose-500 transition-colors cursor-pointer">
-                      {slide.type === "image" ? (
-                        <Image
-                          src={slide.url}
-                          alt={`Thumbnail ${idx + 1}`}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <>
+                {thumbSlides.map((slide, idx) => {
+                  const isActive = idx === activeSlideIndex; // 👈 নিজে চেক করছি
+                  return (
+                    <SwiperSlide key={idx}>
+                      <div
+                        onClick={() => mainSwiperRef.current?.slideTo(idx)} // 👈 ক্লিকযোগ্য
+                        className={`relative aspect-square w-full rounded-lg overflow-hidden cursor-pointer transition-all duration-200 shadow-sm ${
+                          isActive
+                            ? "border-5 border-gray-200 opacity-100 shadow-md"
+                            : "border-5 border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        {slide.type === "image" ? (
                           <Image
-                            src={slide.thumbnail}
-                            alt={`Video Thumbnail`}
+                            src={slide.url}
+                            alt={`Thumbnail ${idx + 1}`}
                             fill
                             className="object-cover"
-                            unoptimized
+                            sizes="150px"
+                            quality={90}
                           />
-                          <div
-                            className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleVideoOpen();
-                            }}
-                          >
-                            <div className="w-6 h-6 rounded-full bg-white/80 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center text-black dark:text-white">
-                              <Play size={10} className="fill-current ml-0.5" />
+                        ) : (
+                          <>
+                            <Image
+                              src={slide.thumbnail}
+                              alt="Video Thumbnail"
+                              fill
+                              className="object-cover"
+                              sizes="150px"
+                              quality={90}
+                            />
+                            <div className="absolute inset-0 bg-black/20" />
+                            <div
+                              className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVideoOpen();
+                              }}
+                            >
+                              <div className="w-6 h-6 rounded-full bg-white/90 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center text-black dark:text-white shadow-sm">
+                                <Play
+                                  size={10}
+                                  className="fill-current ml-0.5"
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </SwiperSlide>
-                ))}
+                          </>
+                        )}
+                      </div>
+                    </SwiperSlide>
+                  );
+                })}
               </Swiper>
             </div>
           )}
@@ -711,9 +746,13 @@ export default function ProductDetails({
           )} */}
 
           <div className="prose prose-stone dark:prose-invert max-w-none mt-5">
-            <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-              {product.description || `${product.name} – একটি চমৎকার বই।`}
-            </p>
+            <div
+              className="text-base leading-relaxed text-stone-700 dark:text-stone-300"
+              dangerouslySetInnerHTML={{
+                __html:
+                  product.description || `${product.name} – একটি চমৎকার বই।`,
+              }}
+            />
           </div>
         </div>
       </div>
@@ -736,29 +775,81 @@ export default function ProductDetails({
       )}
 
       {/* ===== Related Products Section ===== */}
+      {/* ===== Related Products Section ===== */}
+      {/* ===== Related Products Section ===== */}
       {!showIngInModal && relatedProducts.length > 0 && (
-        <div className="mt-12 pt-8 border-t border-stone-200 dark:border-dark-border">
-          <h3 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-6">
-            সম্পর্কিত পণ্য
-          </h3>
-          <Swiper
-            spaceBetween={16}
-            slidesPerView={2}
-            navigation
-            modules={[Navigation]}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              768: { slidesPerView: 3 },
-              1024: { slidesPerView: 4 },
-            }}
-            className="related-products-swiper"
-          >
-            {relatedProducts.map((prod) => (
-              <SwiperSlide key={prod.id}>
-                <ProductCard product={prod} showButtons={true} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+        <div className="relative mt-12 pt-8 border-t border-stone-200 dark:border-dark-border mb-5">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-xl md:text-2xl font-bold text-stone-800 dark:text-stone-100">
+              আরও পছন্দ করতে পারেন !
+            </h3>
+
+            {/* ডেস্কটপ নেভিগেশন — হেডারের পাশে */}
+            <div className="hidden md:flex gap-2">
+              <button
+                onClick={() => relatedSwiperRef.current?.slidePrev()}
+                disabled={isRelatedBeginning}
+                aria-label="Previous"
+                className="cursor-pointer w-9 h-9 rounded-full border border-stone-200 dark:border-dark-border bg-white dark:bg-dark-surface flex items-center justify-center text-stone-600 dark:text-stone-300 hover:bg-gradient-to-r hover:from-[#E57373] hover:to-[#BA68C8] hover:text-white hover:border-transparent transition-all duration-300 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-none disabled:hover:bg-white dark:disabled:hover:bg-dark-surface disabled:hover:text-stone-600 dark:disabled:hover:text-stone-300"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={() => relatedSwiperRef.current?.slideNext()}
+                disabled={isRelatedEnd}
+                aria-label="Next"
+                className="cursor-pointer w-9 h-9 rounded-full border border-stone-200 dark:border-dark-border bg-white dark:bg-dark-surface flex items-center justify-center text-stone-600 dark:text-stone-300 hover:bg-gradient-to-r hover:from-[#E57373] hover:to-[#BA68C8] hover:text-white hover:border-transparent transition-all duration-300 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-none disabled:hover:bg-white dark:disabled:hover:bg-dark-surface disabled:hover:text-stone-600 dark:disabled:hover:text-stone-300"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <Swiper
+              onSwiper={(swiper) => {
+                relatedSwiperRef.current = swiper;
+                setIsRelatedBeginning(swiper.isBeginning);
+                setIsRelatedEnd(swiper.isEnd);
+              }}
+              onSlideChange={(swiper) => {
+                setIsRelatedBeginning(swiper.isBeginning);
+                setIsRelatedEnd(swiper.isEnd);
+              }}
+              spaceBetween={10}
+              slidesPerView={1.5}
+              breakpoints={{
+                768: { slidesPerView: 2.5, spaceBetween: 16 },
+                1024: { slidesPerView: 3, spaceBetween: 20 },
+                1280: { slidesPerView: 4, spaceBetween: 20 },
+              }}
+              className="related-products-swiper !pb-1"
+            >
+              {relatedProducts.map((prod) => (
+                <SwiperSlide key={prod.id}>
+                  <ProductCard product={prod} showButtons={true} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {/* মোবাইল নেভিগেশন — কার্ডের ওপরে ওভারলে */}
+            <button
+              onClick={() => relatedSwiperRef.current?.slidePrev()}
+              disabled={isRelatedBeginning}
+              aria-label="Previous"
+              className="md:hidden absolute left-1 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center text-stone-700 dark:text-stone-200 shadow-md transition-opacity duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={() => relatedSwiperRef.current?.slideNext()}
+              disabled={isRelatedEnd}
+              aria-label="Next"
+              className="md:hidden absolute right-1 top-[35%] -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center text-stone-700 dark:text-stone-200 shadow-md transition-opacity duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
     </>

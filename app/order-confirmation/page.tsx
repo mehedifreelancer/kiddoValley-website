@@ -94,7 +94,6 @@ export default function OrderConfirmationPage() {
                 fill
                 className="object-contain"
                 priority
-                unoptimized
               />
             </div>
           ) : (

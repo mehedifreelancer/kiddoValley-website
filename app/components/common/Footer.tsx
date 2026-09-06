@@ -107,7 +107,6 @@ export default function Footer({
                       className="object-cover"
                       sizes="(max-width: 640px) 48px, 56px"
                       priority
-                      unoptimized
                     />
                   </div>
                 ) : (

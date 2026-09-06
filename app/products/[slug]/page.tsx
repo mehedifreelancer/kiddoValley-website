@@ -16,7 +16,7 @@ export default async function ProductPage({
   }
 
   return (
-    <div className="container-md mx-auto py-10">
+    <div className="container-md mx-auto py-10 mt-2 md:mt-4">
       <ProductDetails product={product} />
     </div>
   );

@@ -65,7 +65,6 @@ const TeamCard = ({
             alt={member.name}
             fill
             className="object-cover"
-            unoptimized
           />
         </div>
         <h3 className="text-xl font-semibold text-stone-800 dark:text-stone-200">
